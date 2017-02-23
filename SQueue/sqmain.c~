@@ -1,0 +1,127 @@
+//---------------------------------------------------------------
+// File: QueueMain.c
+// Purpose: Main file with tests for a demonstration of a queue
+//		as an array.
+// Programming Language: C
+// Author: Dr. Rick Coleman
+// Date: February 11, 2002
+//---------------------------------------------------------------
+#include "squeue.h"
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include <pthread.h>
+#include <sys/types.h>
+
+
+typedef unsigned long long ticks;
+#define NUM_THREADS 32
+#define NUM_SAMPLES 10000000
+
+static int numEnqueue = 0;
+static int numDequeue = 0;
+static ticks dequeue_ticks = 0;
+static int CUR_NUM_THREADS = NUM_THREADS;
+
+
+//An alternative way is to use rdtscp which will wait until all previous instructions have been executed before reading the counter; might be problematic on multi-core machines
+static __inline__ ticks getticks_serial(void)
+{
+    ticks tsc;
+    __asm__ __volatile__(
+                         "rdtscp;"
+                         "shl $32, %%rdx;"
+                         "or %%rdx, %%rax"
+                         : "=a"(tsc)
+                         :
+                         : "%rcx", "%rdx");
+    
+    return tsc;
+}
+
+//get number of ticks, could be problematic on modern CPUs with out of order execution
+static __inline__ ticks getticks(void)
+{
+    ticks tsc;
+    __asm__ __volatile__(
+                         "rdtsc;"
+                         "shl $32, %%rdx;"
+                         "or %%rdx, %%rax"
+                         : "=a"(tsc)
+                         :
+                         : "%rcx", "%rdx");
+    
+    return tsc;
+}
+
+
+
+void *worker_handler()
+{
+    
+    ticks start_tick,end_tick,diff_tick;
+
+    atom value;
+    //for(;;)
+    int NUM_SAMPLES_PER_THREAD = NUM_SAMPLES/CUR_NUM_THREADS;
+    start_tick = getticks();
+    for (int i=0;i<NUM_SAMPLES_PER_THREAD;i++)
+    {
+        value = Dequeue();
+
+        //__sync_fetch_and_add(&numDequeue,1);
+        
+    }
+    end_tick = getticks();
+    diff_tick = end_tick - start_tick;
+    //    printf("Dequeue time: %llu\n", diff_tick/NUM_SAMPLES_PER_THREAD);
+    __sync_add_and_fetch(&dequeue_ticks,diff_tick);
+    
+}
+
+
+int main(int argc, char **argv)
+{
+    //printf("NUM_SAMPLES: %d\n", NUM_SAMPLES);
+
+    printf("Operation,NumSamples,CycleCount,NumThreads\n");
+    for (int k=1;k<=NUM_THREADS;k=k*2)
+    {
+        CUR_NUM_THREADS = k;
+    
+    ticks start_tick,end_tick,diff_tick;
+    pthread_t *worker_threads;
+    
+    worker_threads = (pthread_t *) malloc(sizeof(pthread_t) * CUR_NUM_THREADS);
+    
+    for (int i = 0; i < CUR_NUM_THREADS; i++)
+        pthread_create(&worker_threads[i], NULL, worker_handler, NULL);
+
+    start_tick = getticks();
+    for (int i=0;i<NUM_SAMPLES;i++)
+    {
+        
+        Enqueue((atom)(i+1));
+        
+        //__sync_fetch_and_add(&numEnqueue,1);
+        
+    }
+    end_tick = getticks();
+    diff_tick = end_tick - start_tick;
+//    printf("Enqueue time: %llu\n", diff_tick/NUM_SAMPLES);
+    printf("enqueue,%d,%llu,%d\n", NUM_SAMPLES, diff_tick/NUM_SAMPLES, CUR_NUM_THREADS);
+    
+    for (int i = 0; i < CUR_NUM_THREADS; i++)
+        pthread_join(worker_threads[i], NULL);
+
+    printf("dequeue,%d,%llu,%d\n", NUM_SAMPLES, dequeue_ticks/NUM_SAMPLES, CUR_NUM_THREADS);
+
+//    usleep(1000000);
+    //printf("NUM_SAMPLES: %d\n", NUM_SAMPLES);
+    //printf("Enqueue ops: %d\n", numEnqueue);
+    //printf("Dequeue ops: %d\n", numDequeue);
+//    printf("Enqueue time: %llu\n", diff_tick/NUM_SAMPLES);
+    }
+    return 0;
+}

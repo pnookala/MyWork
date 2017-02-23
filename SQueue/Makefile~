@@ -1,0 +1,18 @@
+CC = gcc
+#CFLAGS = -std=c99 -pedantic -Wall -O2
+CFLAGS = -O2 -pthread -std=c99
+OBJECTS = squeue.o sqmain.o
+
+all: sqmain
+
+sqmain: $(OBJECTS)
+	$(CC) $(OBJECTS) -lrt -lpthread -o sqmain
+
+sqmain.o: sqmain.c
+	$(CC) $(CFLAGS) -c sqmain.c
+
+squeue.o: squeue.c
+	$(CC) $(CFLAGS) -c squeue.c
+
+clean:
+	rm -f *.o sqmain

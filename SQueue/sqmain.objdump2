@@ -1,0 +1,106 @@
+
+sqmain.o:	file format Mach-O 64-bit x86-64
+
+Disassembly of section __TEXT,__text:
+_worker_handler:
+       0:	55 	pushq	%rbp
+       1:	48 89 e5 	movq	%rsp, %rbp
+       4:	66 66 66 2e 0f 1f 84 00 00 00 00 00 	nopw	%cs:(%rax,%rax)
+      10:	0f 31 	rdtsc
+      12:	48 c1 e2 20 	shlq	$32, %rdx
+      16:	48 09 d0 	orq	%rdx, %rax
+      19:	31 c0 	xorl	%eax, %eax
+      1b:	e8 00 00 00 00 	callq	0 <_worker_handler+20>
+      20:	0f 31 	rdtsc
+      22:	48 c1 e2 20 	shlq	$32, %rdx
+      26:	48 09 d0 	orq	%rdx, %rax
+      29:	f0 	lock
+      2a:	ff 05 00 00 00 00 	incl	(%rip)
+      30:	eb de 	jmp	-34 <_worker_handler+10>
+      32:	66 66 66 66 66 2e 0f 1f 84 00 00 00 00 00 	nopw	%cs:(%rax,%rax)
+
+_initThreads:
+      40:	55 	pushq	%rbp
+      41:	48 89 e5 	movq	%rsp, %rbp
+      44:	41 57 	pushq	%r15
+      46:	41 56 	pushq	%r14
+      48:	53 	pushq	%rbx
+      49:	50 	pushq	%rax
+      4a:	bf 00 01 00 00 	movl	$256, %edi
+      4f:	e8 00 00 00 00 	callq	0 <_initThreads+14>
+      54:	49 89 c7 	movq	%rax, %r15
+      57:	31 db 	xorl	%ebx, %ebx
+      59:	4c 8d 35 00 00 00 00 	leaq	(%rip), %r14
+      60:	49 8d 3c 1f 	leaq	(%r15,%rbx), %rdi
+      64:	31 f6 	xorl	%esi, %esi
+      66:	31 c9 	xorl	%ecx, %ecx
+      68:	4c 89 f2 	movq	%r14, %rdx
+      6b:	e8 00 00 00 00 	callq	0 <_initThreads+30>
+      70:	48 83 c3 08 	addq	$8, %rbx
+      74:	48 81 fb 00 01 00 00 	cmpq	$256, %rbx
+      7b:	75 e3 	jne	-29 <_initThreads+20>
+      7d:	48 83 c4 08 	addq	$8, %rsp
+      81:	5b 	popq	%rbx
+      82:	41 5e 	popq	%r14
+      84:	41 5f 	popq	%r15
+      86:	5d 	popq	%rbp
+      87:	c3 	retq
+      88:	0f 1f 84 00 00 00 00 00 	nopl	(%rax,%rax)
+
+_main:
+      90:	55 	pushq	%rbp
+      91:	48 89 e5 	movq	%rsp, %rbp
+      94:	41 57 	pushq	%r15
+      96:	41 56 	pushq	%r14
+      98:	53 	pushq	%rbx
+      99:	50 	pushq	%rax
+      9a:	bf 00 01 00 00 	movl	$256, %edi
+      9f:	e8 00 00 00 00 	callq	0 <_main+14>
+      a4:	49 89 c7 	movq	%rax, %r15
+      a7:	31 db 	xorl	%ebx, %ebx
+      a9:	4c 8d 35 00 00 00 00 	leaq	(%rip), %r14
+      b0:	49 8d 3c 1f 	leaq	(%r15,%rbx), %rdi
+      b4:	31 f6 	xorl	%esi, %esi
+      b6:	31 c9 	xorl	%ecx, %ecx
+      b8:	4c 89 f2 	movq	%r14, %rdx
+      bb:	e8 00 00 00 00 	callq	0 <_main+30>
+      c0:	48 83 c3 08 	addq	$8, %rbx
+      c4:	48 81 fb 00 01 00 00 	cmpq	$256, %rbx
+      cb:	75 e3 	jne	-29 <_main+20>
+      cd:	bb 01 00 00 00 	movl	$1, %ebx
+      d2:	66 66 66 66 66 2e 0f 1f 84 00 00 00 00 00 	nopw	%cs:(%rax,%rax)
+      e0:	0f 31 	rdtsc
+      e2:	48 c1 e2 20 	shlq	$32, %rdx
+      e6:	48 09 d0 	orq	%rdx, %rax
+      e9:	89 df 	movl	%ebx, %edi
+      eb:	e8 00 00 00 00 	callq	0 <_main+60>
+      f0:	0f 31 	rdtsc
+      f2:	48 c1 e2 20 	shlq	$32, %rdx
+      f6:	48 09 d0 	orq	%rdx, %rax
+      f9:	f0 	lock
+      fa:	ff 05 00 00 00 00 	incl	(%rip)
+     100:	ff c3 	incl	%ebx
+     102:	81 fb 41 42 0f 00 	cmpl	$1000001, %ebx
+     108:	75 d6 	jne	-42 <_main+50>
+     10a:	bf 40 42 0f 00 	movl	$1000000, %edi
+     10f:	31 c0 	xorl	%eax, %eax
+     111:	e8 00 00 00 00 	callq	0 <_main+86>
+     116:	48 8d 3d 41 00 00 00 	leaq	65(%rip), %rdi
+     11d:	be 40 42 0f 00 	movl	$1000000, %esi
+     122:	31 c0 	xorl	%eax, %eax
+     124:	e8 00 00 00 00 	callq	0 <_main+99>
+     129:	8b 35 00 00 00 00 	movl	(%rip), %esi
+     12f:	48 8d 3d 39 00 00 00 	leaq	57(%rip), %rdi
+     136:	31 c0 	xorl	%eax, %eax
+     138:	e8 00 00 00 00 	callq	0 <_main+AD>
+     13d:	8b 35 00 00 00 00 	movl	(%rip), %esi
+     143:	48 8d 3d 36 00 00 00 	leaq	54(%rip), %rdi
+     14a:	31 c0 	xorl	%eax, %eax
+     14c:	e8 00 00 00 00 	callq	0 <_main+C1>
+     151:	31 c0 	xorl	%eax, %eax
+     153:	48 83 c4 08 	addq	$8, %rsp
+     157:	5b 	popq	%rbx
+     158:	41 5e 	popq	%r14
+     15a:	41 5f 	popq	%r15
+     15c:	5d 	popq	%rbp
+     15d:	c3 	retq

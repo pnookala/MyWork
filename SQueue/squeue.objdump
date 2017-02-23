@@ -1,0 +1,137 @@
+
+
+
+squeue.o:	file format Mach-O 64-bit x86-64
+
+Disassembly of section __TEXT,__text:
+_InitQueue:
+       0:	55 	pushq	%rbp
+       1:	48 89 e5 	movq	%rsp, %rbp
+       4:	c7 05 fc ff ff ff ff ff ff ff 	movl	$4294967295, -4(%rip)
+       e:	c7 05 fc ff ff ff ff ff ff ff 	movl	$4294967295, -4(%rip)
+      18:	48 8d 3d 00 00 00 00 	leaq	(%rip), %rdi
+      1f:	be 00 b4 c4 04 	movl	$80000000, %esi
+      24:	e8 00 00 00 00 	callq	0 <_InitQueue+29>
+      29:	5d 	popq	%rbp
+      2a:	c3 	retq
+      2b:	0f 1f 44 00 00 	nopl	(%rax,%rax)
+
+_ClearQueue:
+      30:	55 	pushq	%rbp
+      31:	48 89 e5 	movq	%rsp, %rbp
+      34:	c7 05 fc ff ff ff ff ff ff ff 	movl	$4294967295, -4(%rip)
+      3e:	c7 05 fc ff ff ff ff ff ff ff 	movl	$4294967295, -4(%rip)
+      48:	48 8d 3d 00 00 00 00 	leaq	(%rip), %rdi
+      4f:	be 00 b4 c4 04 	movl	$80000000, %esi
+      54:	e8 00 00 00 00 	callq	0 <_ClearQueue+29>
+      59:	5d 	popq	%rbp
+      5a:	c3 	retq
+      5b:	0f 1f 44 00 00 	nopl	(%rax,%rax)
+
+_PrintQueue:
+      60:	55 	pushq	%rbp
+      61:	48 89 e5 	movq	%rsp, %rbp
+      64:	41 57 	pushq	%r15
+      66:	41 56 	pushq	%r14
+      68:	53 	pushq	%rbx
+      69:	50 	pushq	%rax
+      6a:	48 8d 3d 3c 01 00 00 	leaq	316(%rip), %rdi
+      71:	31 c0 	xorl	%eax, %eax
+      73:	e8 00 00 00 00 	callq	0 <_PrintQueue+18>
+      78:	4c 8d 3d 00 00 00 00 	leaq	(%rip), %r15
+      7f:	4c 8d 35 36 01 00 00 	leaq	310(%rip), %r14
+      86:	31 db 	xorl	%ebx, %ebx
+      88:	0f 1f 84 00 00 00 00 00 	nopl	(%rax,%rax)
+      90:	41 8b 17 	movl	(%r15), %edx
+      93:	85 d2 	testl	%edx, %edx
+      95:	74 0c 	je	12 <_PrintQueue+43>
+      97:	31 c0 	xorl	%eax, %eax
+      99:	4c 89 f7 	movq	%r14, %rdi
+      9c:	89 de 	movl	%ebx, %esi
+      9e:	e8 00 00 00 00 	callq	0 <_PrintQueue+43>
+      a3:	48 ff c3 	incq	%rbx
+      a6:	49 83 c7 04 	addq	$4, %r15
+      aa:	48 81 fb 00 2d 31 01 	cmpq	$20000000, %rbx
+      b1:	75 dd 	jne	-35 <_PrintQueue+30>
+      b3:	48 83 c4 08 	addq	$8, %rsp
+      b7:	5b 	popq	%rbx
+      b8:	41 5e 	popq	%r14
+      ba:	41 5f 	popq	%r15
+      bc:	5d 	popq	%rbp
+      bd:	c3 	retq
+      be:	66 90 	nop
+
+_Enqueue:
+      c0:	55 	pushq	%rbp
+      c1:	48 89 e5 	movq	%rsp, %rbp
+      c4:	b8 01 00 00 00 	movl	$1, %eax
+      c9:	f0 	lock
+      ca:	0f c1 05 00 00 00 00 	xaddl	%eax, (%rip)
+      d1:	8d 48 01 	leal	1(%rax), %ecx
+      d4:	48 63 c9 	movslq	%ecx, %rcx
+      d7:	48 69 c9 6b ca 5f 6b 	imulq	$1801439851, %rcx, %rcx
+      de:	48 89 ca 	movq	%rcx, %rdx
+      e1:	48 c1 ea 3f 	shrq	$63, %rdx
+      e5:	48 c1 f9 37 	sarq	$55, %rcx
+      e9:	01 d1 	addl	%edx, %ecx
+      eb:	69 c9 00 2d 31 01 	imull	$20000000, %ecx, %ecx
+      f1:	f7 d9 	negl	%ecx
+      f3:	8d 44 08 01 	leal	1(%rax,%rcx), %eax
+      f7:	48 98 	cltq
+      f9:	48 8d 0d 00 00 00 00 	leaq	(%rip), %rcx
+     100:	89 3c 81 	movl	%edi, (%rcx,%rax,4)
+     103:	b8 01 00 00 00 	movl	$1, %eax
+     108:	5d 	popq	%rbp
+     109:	c3 	retq
+     10a:	66 0f 1f 44 00 00 	nopw	(%rax,%rax)
+
+_Dequeue:
+     110:	55 	pushq	%rbp
+     111:	48 89 e5 	movq	%rsp, %rbp
+     114:	b8 01 00 00 00 	movl	$1, %eax
+     119:	f0 	lock
+     11a:	0f c1 05 00 00 00 00 	xaddl	%eax, (%rip)
+     121:	8d 48 01 	leal	1(%rax), %ecx
+     124:	48 63 c9 	movslq	%ecx, %rcx
+     127:	48 69 c9 6b ca 5f 6b 	imulq	$1801439851, %rcx, %rcx
+     12e:	48 89 ca 	movq	%rcx, %rdx
+     131:	48 c1 ea 3f 	shrq	$63, %rdx
+     135:	48 c1 f9 37 	sarq	$55, %rcx
+     139:	01 d1 	addl	%edx, %ecx
+     13b:	69 c9 00 2d 31 01 	imull	$20000000, %ecx, %ecx
+     141:	f7 d9 	negl	%ecx
+     143:	8d 44 08 01 	leal	1(%rax,%rcx), %eax
+     147:	48 98 	cltq
+     149:	48 8d 0d 00 00 00 00 	leaq	(%rip), %rcx
+     150:	48 8d 0c 81 	leaq	(%rcx,%rax,4), %rcx
+     154:	66 66 66 2e 0f 1f 84 00 00 00 00 00 	nopw	%cs:(%rax,%rax)
+     160:	83 39 00 	cmpl	$0, (%rcx)
+     163:	74 fb 	je	-5 <_Dequeue+50>
+     165:	8b 01 	movl	(%rcx), %eax
+     167:	f0 	lock
+     168:	83 21 00 	andl	$0, (%rcx)
+     16b:	5d 	popq	%rbp
+     16c:	c3 	retq
+     16d:	0f 1f 00 	nopl	(%rax)
+
+_isEmpty:
+     170:	55 	pushq	%rbp
+     171:	48 89 e5 	movq	%rsp, %rbp
+     174:	8b 05 00 00 00 00 	movl	(%rip), %eax
+     17a:	3b 05 00 00 00 00 	cmpl	(%rip), %eax
+     180:	0f 94 c0 	sete	%al
+     183:	0f b6 c0 	movzbl	%al, %eax
+     186:	5d 	popq	%rbp
+     187:	c3 	retq
+     188:	0f 1f 84 00 00 00 00 00 	nopl	(%rax,%rax)
+
+_isFull:
+     190:	55 	pushq	%rbp
+     191:	48 89 e5 	movq	%rsp, %rbp
+     194:	b8 00 d3 ce fe 	movl	$4274967296, %eax
+     199:	03 05 00 00 00 00 	addl	(%rip), %eax
+     19f:	3b 05 00 00 00 00 	cmpl	(%rip), %eax
+     1a5:	0f 9d c0 	setge	%al
+     1a8:	0f b6 c0 	movzbl	%al, %eax
+     1ab:	5d 	popq	%rbp
+     1ac:	c3 	retq
