@@ -177,7 +177,7 @@ int main(int argc, char **argv) {
 	///////////////////////////// SQueue - Lock free queue - SECD /////////////////////////////////
 	printf("Num threads - %d, Num Samples - %d, Num CPUs - %d \n", NUM_THREADS,
 			NUM_SAMPLES, NUM_CPUS);
-	printf("SQueue - Single Enqueue Concurrent Dequeue\n");
+	printf("\nSQueue - Single Enqueue Concurrent Dequeue\n");
 	printf("Operation,NumSamples,CycleCount,NumThreads\n");
 	for (k = 1; k <= NUM_THREADS; k = k * 2) {
 		InitQueue();
@@ -235,7 +235,7 @@ int main(int argc, char **argv) {
 #endif
 	}
 	///////////////////////////// SQueue - Lock free queue - CECD /////////////////////////////////
-	printf("SQueue - Concurrent Enqueue Concurrent Dequeue\n");
+	printf("\nSQueue - Concurrent Enqueue Concurrent Dequeue\n");
 	printf("Operation,NumSamples,CycleCount,NumThreads\n");
 	for (k = 1; k <= NUM_THREADS; k = k * 2) {
 		InitQueue();
@@ -283,7 +283,7 @@ int main(int argc, char **argv) {
 				dequeue_ticks / NUM_SAMPLES, CUR_NUM_THREADS);
 	}
 	///////////////////////////// CK - Lock free queue - SPMC /////////////////////////////////
-	printf("CK - Single Producer Multiple Consumer \n");
+	printf("\nCK - Single Producer Multiple Consumer \n");
 	printf("Type,Operation,NumSamples,CycleCount,NumThreads\n");
 	struct entry entry = { 0, 0 };
 	ck_ring_buffer_t *buf;
@@ -329,9 +329,10 @@ int main(int argc, char **argv) {
 		printf("ck_spmc,enqueue,%d,%" PRIu64 ",%d\n", NUM_SAMPLES, e_a/NUM_SAMPLES, CUR_NUM_THREADS);
 		printf("ck_spmc,dequeue,%d,%" PRIu64 ",%d\n", NUM_SAMPLES, dequeue_ticks/CUR_NUM_THREADS, CUR_NUM_THREADS);
 	}
-
+	printf("\Basic - Single Producer Multiple Consumer \n");
 	for (k=1;k<=NUM_THREADS;k=k*2)
 		{
+
 		ResetCounters();
 			InitBasicQueue();
 			CUR_NUM_THREADS = k;
