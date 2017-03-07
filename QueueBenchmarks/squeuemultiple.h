@@ -5,22 +5,29 @@
 // Programming Language: C
 // Author: Dr. Rick Coleman
 //---------------------------------------------------------------
-#ifndef SQUEUE_H
-#define SQUEUE_H
+#ifndef SQUEUEMULTIPLE_H
+#define SQUEUEMULTIPLE_H
 
 #include <stdio.h>
+#include "squeue.h"
 
-#define NUM_SAMPLES 8//128000000 //(128000*1024)
 #define MAX_SIZE NUM_SAMPLES        // Define maximum length of the queue
-typedef int atom;
 
+struct theQueue
+{
+	int head;
+	int tail;
+	atom data[MAX_SIZE] __attribute__((aligned (4096)));
+};
+
+struct theQueue **queues;
 
 // List Function Prototypes
-void InitQueue();             // Initialize the queue
-void ClearQueue();            // Remove all items from the queue
-void PrintQueue();            // Print all items from the queue
-int Enqueue(atom elem);      // Enter an item in the queue
-atom Dequeue();             // Remove an item from the queue
+void InitQueues(int numQueues);             // Initialize the queue
+void ClearQueues();            // Remove all items from the queue
+void PrintQueues();            // Print all items from the queue
+int EnqueueMultiple(atom elem, struct theQueue *queue, int queueID);      // Enter an item in the queue
+atom DequeueMultiple(struct theQueue *q, int queueID);             // Remove an item from the queue
 //inline int isEmpty();                // Return true if queue is empty
 //inline int isFull();                 // Return true if queue is full
 

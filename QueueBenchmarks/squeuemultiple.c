@@ -9,20 +9,7 @@
 #include <sys/types.h>
 #include <stdlib.h>
 #include <sched.h>
-#include "squeue.h"
-
-
-// Declare these as static so no code outside of this source
-// can access them.
-int head, tail;	// Declare global indices to head and tail of queue
-
-
-//atom *theQueue;	// The queue
-//atom theQueue[MAX_SIZE];	// The queue
-//static volatile atom theQueue[MAX_SIZE];
-atom theQueue[MAX_SIZE] __attribute__((aligned (4096)));
-//static atom theQueue[MAX_SIZE];
-
+#include "squeuemultiple.h"
 
 static inline void spinlock(volatile int *lock)
 {
@@ -42,15 +29,22 @@ static inline void spinunlock(volatile int *lock)
 // Purpose: Initialize queue to empty.
 // Returns: void
 //--------------------------------------------
-void InitQueue()
+void InitQueues(int numQueues)
 {
-    head = tail = -1;
- 
-    //dynamically allocate memory to hold data samples
-    //theQueue = (atom *)malloc(sizeof(atom)*MAX_SIZE);
-    
-    for (int i=0;i<MAX_SIZE;i++)
-        theQueue[i] = 0;
+#ifdef VERBOSE
+	printf("Number of queues: %d\n", numQueues);
+#endif
+	queues = (struct theQueue **) malloc(sizeof(struct theQueue) * numQueues);
+	for(int i=0; i<numQueues; i++)
+	{
+		struct theQueue *queue = malloc(sizeof(struct theQueue));
+		queue->head = -1;
+		queue->tail = -1;
+		for (int i=0;i<MAX_SIZE;i++)
+		    queue->data[i] = 0;
+
+		queues[i] = queue;
+	}
 }
 
 //--------------------------------------------
@@ -58,20 +52,18 @@ void InitQueue()
 // Purpose: Remove all items from the queue
 // Returns: void
 //--------------------------------------------
-void ClearQueue()
+void ClearQueues()
 {
-    head = tail = -1; // Reset indices to start over
-    for (int i=0;i<MAX_SIZE;i++)
-        theQueue[i] = 0;
+    free(queues);
 }
 
-void PrintQueue()
+void PrintQueues()
 {
-    printf("printing queue");
-    for (int i=0;i<MAX_SIZE;i++)
-    {
-        if (theQueue[i] != 0) printf("%d %d\n", i, theQueue[i]);
-    }
+//    printf("printing queue");
+//    for (int i=0;i<MAX_SIZE;i++)
+//    {
+//        if (theQueue[i] != 0) printf("%d %d\n", i, theQueue[i]);
+//    }
 }
 
 
@@ -88,20 +80,20 @@ void PrintQueue()
 //		is reached.
 //--------------------------------------------
 //should be thread safe, with no locks, just one atomic operation
-inline int Enqueue(atom elem)
+inline int EnqueueMultiple(atom elem, struct theQueue *q, int queueID)
 {
     // Check to see if the Queue is full
     //could pose problems in concurent enqueue, perhaps leave extra space in the queue...
     //while ((tail - MAX_SIZE) == head);
     //check if its full, and wait...
-    
+
     // Increment tail index
-    int cur_tail = __sync_add_and_fetch(&tail,1);
-    
+    int cur_tail = __sync_add_and_fetch(&q->tail,1);
+
     // Add the item to the Queue
-    theQueue[cur_tail % MAX_SIZE] = elem;
+    q->data[cur_tail % MAX_SIZE] = elem;
 #ifdef VERBOSE
-    printf("Enqueue: %d\n", elem);
+    printf("QueueID: %d, Enqueue: %d\n", queueID, elem);
 #endif
     return TRUE;
 }
@@ -114,27 +106,23 @@ inline int Enqueue(atom elem)
 //		or FALSE if the dequeue failed.
 //--------------------------------------------
 
-inline atom Dequeue()
+inline atom DequeueMultiple(struct theQueue *q, int queueID)
 {
-    atom elem;
-    
-    
-    
-    int cur_head = __sync_add_and_fetch(&head,1);
-    
-    volatile atom * target = theQueue + (cur_head % MAX_SIZE);
-    
+	atom elem = 0;
+    int cur_head = __sync_add_and_fetch(&q->head,1);
+
+    volatile atom * target = q->data + (cur_head % MAX_SIZE);
+
     while (!*target)
     {}
-    
-    
-    //elem = __sync_val_compare_and_swap(&theQueue[cur_head % MAX_SIZE], theQueue[cur_head % MAX_SIZE], 0);
+
     elem = *target;
-            
+
     // probably don't need to sync here, but at least do a software barrier
     __sync_fetch_and_and(target,0);
+
 #ifdef VERBOSE
-    printf("Dequeue: %d\n", elem);
+    printf("QueueID: %d, Dequeue: %d\n", queueID, elem);
 #endif
     return elem;
     
@@ -150,7 +138,7 @@ inline atom Dequeue()
 //--------------------------------------------
 inline int isEmpty()
 {
-    return (head == tail);
+//    return (head == tail);
 }
 
 //--------------------------------------------
@@ -166,5 +154,5 @@ inline int isFull()
     // Queue is full if tail has wrapped around
     //	to location of the head.  See note in
     //	Enqueue() function.
-    return ((tail - MAX_SIZE) >= head);
+//    return ((tail - MAX_SIZE) >= head);
 }

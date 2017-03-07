@@ -1,0 +1,12 @@
+QueueType NumThreads EnqueueMin DequeueMin EnqueueMax DequeueMax EnqueueAverage DequeueAverage EnqueueMinTime DequeueMinTime EnqueueMaxTime DequeueMaxTime EnqueueAverageTime DequeueAverageTime
+1 1 42 69 916 342 154.000000 113.000000 14.482759 23.793102 315.862061 117.931030 53.103447 38.965516
+1 2 65 60 455 24068 194.000000 5497.000000 22.413792 20.689655 156.896545 8299.310547 66.896550 1895.517179
+QueueType NumThreads EnqueueMin DequeueMin EnqueueMax DequeueMax EnqueueAverage DequeueAverage EnqueueMinTime DequeueMinTime EnqueueMaxTime DequeueMaxTime EnqueueAverageTime DequeueAverageTime
+1 1 19200 10987 49651 21596 25475.000000 16399.000000 6620.689453 3788.620605 17121.033203 7446.896484 8784.482470 5654.827400
+1 2 12317 14559 324185 29134815 98079.000000 5132945.000000 4247.241211 5020.344727 111787.929688 10046488.000000 33820.343715 1769980.976276
+QueueType NumThreads EnqueueMin DequeueMin EnqueueMax DequeueMax EnqueueAverage DequeueAverage EnqueueMinTime DequeueMinTime EnqueueMaxTime DequeueMaxTime EnqueueAverageTime DequeueAverageTime
+2 1 36 18 170 56 63.000000 32.000000 12.413793 6.206896 58.620689 19.310345 21.724137 11.034482
+2 2 45 18 247 45 84.000000 25.000000 15.517241 6.206896 85.172409 15.517241 28.965516 8.620689
+QueueType NumThreads EnqueueMin DequeueMin EnqueueMax DequeueMax EnqueueAverage DequeueAverage EnqueueMinTime DequeueMinTime EnqueueMaxTime DequeueMaxTime EnqueueAverageTime DequeueAverageTime
+2 1 30 18 1261 357 214.000000 63.000000 10.344828 6.206896 434.827576 123.103447 73.793101 21.724137
+2 2 39 18 717 238 172.000000 51.000000 13.448276 6.206896 247.241379 82.068962 59.310343 17.586206

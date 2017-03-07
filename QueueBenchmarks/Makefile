@@ -1,6 +1,6 @@
-CC = gcc
-CFLAGS = -std=c99 -O2 -Wall -Wpedantic -Werror -DWAITFORENQUEUE #-DVERBOSE
-OBJECTS = squeue.o basicqueue.o sqmain.o
+CC = gcc -g
+CFLAGS = -std=c99 -O2 -Wall -Wpedantic -Werror -DLATENCY -DRAW #-DTHROUGHPUT #-DRAW #-DVERBOSE #-DCALIBRATE
+OBJECTS = squeue.o squeuemultiple.o basicqueue.o sqmain.o
 LDFLAGS = -lrt -lpthread
 
 all: sqmain
@@ -13,6 +13,9 @@ sqmain.o: sqmain.c
 
 squeue.o: squeue.c
 	$(CC) $(CFLAGS) -c squeue.c
+	
+squeuemultiple.o: squeuemultiple.c
+	$(CC) $(CFLAGS) -c squeuemultiple.c
 	
 basicqueue.o: basicqueue.c
 	$(CC) $(CFLAGS) -c basicqueue.c
