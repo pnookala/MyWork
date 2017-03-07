@@ -90,12 +90,12 @@ void ComputeSummary(int type, int numThreads, FILE* afp, int rdtsc_overhead)
 	std::cout << "Average Enqueue : " << tickEnqueueAverage <<std::endl;
 	std::cout << "Average Dequeue : " << tickDequeueAverage<<std::endl;
 
-	double enqueueMinTime = ((enqueuetickMin-rdtsc_overhead)/clockFreq);
-	double dequeueMinTime = ((dequeuetickMin-rdtsc_overhead)/clockFreq);
-	double enqueueMaxTime = ((enqueuetickMax-rdtsc_overhead)/clockFreq);
-	double dequeueMaxTime = ((dequeuetickMax-rdtsc_overhead)/clockFreq);
-	double enqueueAvgTime = ((tickEnqueueAverage-rdtsc_overhead)/clockFreq);
-	double dequeueAvgTime = ((tickDequeueAverage-rdtsc_overhead)/clockFreq);
+	double enqueueMinTime = ((enqueuetickMin)/clockFreq);
+	double dequeueMinTime = ((dequeuetickMin)/clockFreq);
+	double enqueueMaxTime = ((enqueuetickMax)/clockFreq);
+	double dequeueMaxTime = ((dequeuetickMax)/clockFreq);
+	double enqueueAvgTime = ((tickEnqueueAverage)/clockFreq);
+	double dequeueAvgTime = ((tickDequeueAverage)/clockFreq);
 
 	std::cout << "Enqueue Min Time (ns): " << enqueueMinTime << std::endl;
 	std::cout << "Dequeue Min Time (ns): " << dequeueMinTime << std::endl;
@@ -106,7 +106,7 @@ void ComputeSummary(int type, int numThreads, FILE* afp, int rdtsc_overhead)
 	std::cout << "Average Enqueue Time (ns): " << enqueueAvgTime << std::endl;
 	std::cout << "Average Dequeue Time (ns): " << dequeueAvgTime << std::endl;
 
-	fprintf(afp, "%d %d %ld %ld %ld %ld %lf %lf %lf %lf %lf %lf %lf %lf\n",type, numThreads, enqueuetickMin, dequeuetickMin, enqueuetickMax, dequeuetickMax, tickEnqueueAverage, tickDequeueAverage, enqueueMinTime, dequeueMinTime, enqueueMaxTime, dequeueMaxTime, enqueueAvgTime, dequeueAvgTime);
+	fprintf(afp, "%d %d %d %ld %ld %ld %ld %lf %lf %lf %lf %lf %lf %lf %lf\n",type, numThreads, NUM_SAMPLES, enqueuetickMin, dequeuetickMin, enqueuetickMax, dequeuetickMax, tickEnqueueAverage, tickDequeueAverage, enqueueMinTime, dequeueMinTime, enqueueMaxTime, dequeueMaxTime, enqueueAvgTime, dequeueAvgTime);
 #endif
 #ifdef THROUGHPUT
 	printf("NumSamples:%d NumThreads:%d EnqueueThroughput:%d DequeueThroughput:%d\n", NUM_SAMPLES, numThreads, enqueuethroughput, dequeuethroughput);

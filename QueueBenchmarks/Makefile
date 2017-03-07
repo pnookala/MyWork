@@ -1,5 +1,5 @@
 CC = gcc -g
-CFLAGS = -std=c99 -O2 -Wall -Wpedantic -Werror -DCALIBRATE -DLATENCY #-DRAW #-DVERBOSE #-DCALIBRATE
+CFLAGS = -std=c99 -O2 -Wall -Wpedantic -Werror -DCALIBRATE -DLATENCY -DRAW #-DVERBOSE #-DCALIBRATE
 OBJECTS = squeue.o squeuemultiple.o basicqueue.o sqmain.o
 LDFLAGS = -lrt -lpthread
 

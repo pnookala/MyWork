@@ -469,12 +469,12 @@ void ComputeSummary(int type, int numThreads, FILE* afp, int rdtsc_overhead)
 	printf("Average Enqueue : %lf\n", tickEnqueueAverage);
 	printf("Average Dequeue : %lf\n", tickDequeueAverage);
 
-	double enqueueMinTime = ((enqueuetickMin-rdtsc_overhead)/clockFreq);
-	double dequeueMinTime = ((dequeuetickMin-rdtsc_overhead)/clockFreq);
-	double enqueueMaxTime = ((enqueuetickMax-rdtsc_overhead)/clockFreq);
-	double dequeueMaxTime = ((dequeuetickMax-rdtsc_overhead)/clockFreq);
-	double enqueueAvgTime = ((tickEnqueueAverage-rdtsc_overhead)/clockFreq);
-	double dequeueAvgTime = ((tickDequeueAverage-rdtsc_overhead)/clockFreq);
+	double enqueueMinTime = ((enqueuetickMin)/clockFreq);
+	double dequeueMinTime = ((dequeuetickMin)/clockFreq);
+	double enqueueMaxTime = ((enqueuetickMax)/clockFreq);
+	double dequeueMaxTime = ((dequeuetickMax)/clockFreq);
+	double enqueueAvgTime = ((tickEnqueueAverage)/clockFreq);
+	double dequeueAvgTime = ((tickDequeueAverage)/clockFreq);
 
 	printf("Enqueue Min Time (ns): %lf\n", enqueueMinTime);
 	printf("Dequeue Min Time (ns): %lf\n", dequeueMinTime);
@@ -485,7 +485,7 @@ void ComputeSummary(int type, int numThreads, FILE* afp, int rdtsc_overhead)
 	printf("Average Enqueue Time (ns): %lf\n", enqueueAvgTime);
 	printf("Average Dequeue Time (ns): %lf\n", dequeueAvgTime);
 
-	fprintf(afp, "%d %d %ld %ld %ld %ld %lf %lf %lf %lf %lf %lf %lf %lf\n",type, numThreads, enqueuetickMin, dequeuetickMin, enqueuetickMax, dequeuetickMax, tickEnqueueAverage, tickDequeueAverage, enqueueMinTime, dequeueMinTime, enqueueMaxTime, dequeueMaxTime, enqueueAvgTime, dequeueAvgTime);
+	fprintf(afp, "%d %d %d %ld %ld %ld %ld %lf %lf %lf %lf %lf %lf %lf %lf\n",type, numThreads, NUM_SAMPLES, enqueuetickMin, dequeuetickMin, enqueuetickMax, dequeuetickMax, tickEnqueueAverage, tickDequeueAverage, enqueueMinTime, dequeueMinTime, enqueueMaxTime, dequeueMaxTime, enqueueAvgTime, dequeueAvgTime);
 #endif
 #ifdef THROUGHPUT
 	printf("NumSamples:%d NumThreads:%d EnqueueThroughput:%d DequeueThroughput:%d\n", NUM_SAMPLES, numThreads, enqueuethroughput, dequeuethroughput);
@@ -566,16 +566,28 @@ int main(int argc, char **argv) {
 	ticks start_tick = (ticks)0;
 	ticks end_tick = (ticks)0;
 	ticks totalTicks = (ticks)0;
+	ticks diff_tick = (ticks)0;
 
+	ticks minRdtscTicks = 0;
 	for (int i = 0; i < NUM_SAMPLES; i++)
 	{
 		start_tick = getticks();
 		end_tick = getticks();
 
-		totalTicks += (end_tick - start_tick);
+		diff_tick = (end_tick - start_tick);
+		totalTicks += diff_tick;
+		if(i == 0)
+			minRdtscTicks = diff_tick;
+		else
+		{
+			if(minRdtscTicks > diff_tick)
+				minRdtscTicks = diff_tick;
+		}
+		//printf("min rdtsc: %ld\n", minRdtscTicks);
 	}
 
-	rdtsc_overhead_ticks = (totalTicks/NUM_SAMPLES);
+	//rdtsc_overhead_ticks = (totalTicks/NUM_SAMPLES);
+	rdtsc_overhead_ticks = minRdtscTicks;
 	printf("RDTSC time: %d\n", rdtsc_overhead_ticks);
 #ifdef RAW
 	fprintf(rfp, "RDTSC time: %d\n", rdtsc_overhead_ticks);
