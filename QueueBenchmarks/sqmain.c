@@ -538,7 +538,7 @@ int main(int argc, char **argv) {
 		{
 			threads[threadCount] = atoi(thread);
 			threadCount++;
-			printf("%c ", *thread);
+			printf("%s ", thread);
 			thread = strtok (NULL, ",");
 		}
 
@@ -577,7 +577,9 @@ int main(int argc, char **argv) {
 
 	rdtsc_overhead_ticks = (totalTicks/NUM_SAMPLES);
 	printf("RDTSC time: %d\n", rdtsc_overhead_ticks);
+#ifdef RAW
 	fprintf(rfp, "RDTSC time: %d\n", rdtsc_overhead_ticks);
+#endif
 	fprintf(afp, "RDTSC time: %d\n", rdtsc_overhead_ticks);
 
 #endif
