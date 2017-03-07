@@ -469,6 +469,21 @@ void ComputeSummary(int type, int numThreads, FILE* afp, int rdtsc_overhead)
 	printf("Average Enqueue : %lf\n", tickEnqueueAverage);
 	printf("Average Dequeue : %lf\n", tickDequeueAverage);
 
+	ticks enqueuetickmedian = 0, dequeuetickmedian = 0;
+
+		if(NUM_SAMPLES % 2==0) {
+		        // if there is an even number of elements, return mean of the two elements in the middle
+		        enqueuetickmedian = ((numEnqueueTicks[(NUM_SAMPLES/2)] + numEnqueueTicks[(NUM_SAMPLES/2) - 1]) / 2.0);
+		        dequeuetickmedian = ((numDequeueTicks[(NUM_SAMPLES/2)] + numDequeueTicks[(NUM_SAMPLES/2) - 1]) / 2.0);
+		    } else {
+		        // else return the element in the middle
+		        enqueuetickmedian = numEnqueueTicks[(NUM_SAMPLES/2)];
+		        dequeuetickmedian = numDequeueTicks[(NUM_SAMPLES/2)];
+		    }
+
+	printf("Median Enqueue : %ld\n", enqueuetickmedian);
+	printf("Median Dequeue : %ld\n", dequeuetickmedian);
+
 	double enqueueMinTime = ((enqueuetickMin)/clockFreq);
 	double dequeueMinTime = ((dequeuetickMin)/clockFreq);
 	double enqueueMaxTime = ((enqueuetickMax)/clockFreq);
@@ -485,7 +500,7 @@ void ComputeSummary(int type, int numThreads, FILE* afp, int rdtsc_overhead)
 	printf("Average Enqueue Time (ns): %lf\n", enqueueAvgTime);
 	printf("Average Dequeue Time (ns): %lf\n", dequeueAvgTime);
 
-	fprintf(afp, "%d %d %d %ld %ld %ld %ld %lf %lf %lf %lf %lf %lf %lf %lf\n",type, numThreads, NUM_SAMPLES, enqueuetickMin, dequeuetickMin, enqueuetickMax, dequeuetickMax, tickEnqueueAverage, tickDequeueAverage, enqueueMinTime, dequeueMinTime, enqueueMaxTime, dequeueMaxTime, enqueueAvgTime, dequeueAvgTime);
+	fprintf(afp, "%d %d %d %ld %ld %ld %ld %lf %lf %ld %ld %lf %lf %lf %lf %lf %lf\n",type, numThreads, NUM_SAMPLES, enqueuetickMin, dequeuetickMin, enqueuetickMax, dequeuetickMax, tickEnqueueAverage, tickDequeueAverage, enqueuetickmedian, dequeuetickmedian, enqueueMinTime, dequeueMinTime, enqueueMaxTime, dequeueMaxTime, enqueueAvgTime, dequeueAvgTime);
 #endif
 #ifdef THROUGHPUT
 	printf("NumSamples:%d NumThreads:%d EnqueueThroughput:%d DequeueThroughput:%d\n", NUM_SAMPLES, numThreads, enqueuethroughput, dequeuethroughput);
@@ -614,7 +629,7 @@ int main(int argc, char **argv) {
 	printf("QueueType NumSamples EnqueueCycles DequeueCycles NumThreads EnqueueTime(ns) DequeueTime(ns)\n");
 #endif
 #ifdef LATENCY
-	fprintf(afp, "QueueType NumThreads EnqueueMin DequeueMin EnqueueMax DequeueMax EnqueueAverage DequeueAverage EnqueueMinTime DequeueMinTime EnqueueMaxTime DequeueMaxTime EnqueueAverageTime DequeueAverageTime\n");
+	fprintf(afp, "QueueType NumThreads EnqueueMin DequeueMin EnqueueMax DequeueMax EnqueueAverage DequeueAverage EnqueueMedian DequeueMedian EnqueueMinTime DequeueMinTime EnqueueMaxTime DequeueMaxTime EnqueueAverageTime DequeueAverageTime\n");
 #endif
 
 	//Execute benchmarks for various types of queues
