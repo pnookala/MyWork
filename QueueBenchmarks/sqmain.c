@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <math.h>
+#include <unistd.h>
 #include <pthread.h>
 #include <sys/types.h>
 #include <sched.h>
@@ -19,6 +20,7 @@
 #include "basicqueue.h"
 #include <time.h>
 #include "squeuemultiple.h"
+#include <sys/time.h>
 
 struct entry {
 	int tid;
@@ -50,7 +52,6 @@ pthread_cond_t cond_var = PTHREAD_COND_INITIALIZER;
 pthread_mutex_t cond_var_lock =  PTHREAD_MUTEX_INITIALIZER;
 
 int enqueuethroughput, dequeuethroughput = 0;
-
 static pthread_barrier_t barrier;
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 
@@ -447,7 +448,7 @@ void ResetCounters() {
 	enqueuethroughput = 0;
 }
 
-void ComputeSummary(int type, int numThreads, FILE* afp, int rdtsc_overhead)
+void ComputeSummary(int type, int numThreads, FILE* afp, FILE* rfp, int rdtsc_overhead)
 {
 #ifdef LATENCY
 	ticks totalEnqueueTicks = 0,  totalDequeueTicks = 0;
@@ -464,20 +465,27 @@ void ComputeSummary(int type, int numThreads, FILE* afp, int rdtsc_overhead)
 	{
 		//compute the elapsed time per invocation, and subtract the cost of the emtpy loop cost per iteration
 		numEnqueueTicks[i]=enqueuetimestamp[i]-rdtsc_overhead;
-
 		totalEnqueueTicks += numEnqueueTicks[i];
-		//if (numEnqueueTicks[i]>enqueuetickMax) enqueuetickMax = numEnqueueTicks[i];
-		//if (numEnqueueTicks[i]<enqueuetickMin) enqueuetickMin = numEnqueueTicks[i];
 
 		numDequeueTicks[i]= dequeuetimestamp[i]-rdtsc_overhead;
-
 		totalDequeueTicks += numDequeueTicks[i];
-		//if (numDequeueTicks[i]>dequeuetickMax) dequeuetickMax = numDequeueTicks[i];
-		//if (numDequeueTicks[i]<dequeuetickMin) dequeuetickMin = numDequeueTicks[i];
 	}
 
 	SortTicks(numEnqueueTicks);
 	SortTicks(numDequeueTicks);
+
+	for(int i=0;i<NUM_SAMPLES;i++)
+	{
+#ifdef RAW
+		double enqueueTime = (numEnqueueTicks[i]/clockFreq);
+		double dequeueTime = (numDequeueTicks[i]/clockFreq);
+
+		fprintf(rfp, "%d %d %ld %ld %d %lf %lf\n", type, NUM_SAMPLES, (numEnqueueTicks[i]), (numDequeueTicks[i]), CUR_NUM_THREADS, enqueueTime, dequeueTime);
+#endif
+#ifdef VERBOSE
+		printf("%d %d %ld %ld %d %lf %lf\n", type, NUM_SAMPLES, (numEnqueueTicks[i]), (numDequeueTicks[i]), CUR_NUM_THREADS, enqueueTime, dequeueTime);
+#endif
+	}
 
 	enqueuetickMin = numEnqueueTicks[0];
 	enqueuetickMax = numEnqueueTicks[NUM_SAMPLES-1];
@@ -545,7 +553,7 @@ int main(int argc, char **argv) {
 	int *threads = malloc(sizeof(int*));
 	char* fileName1, *fileName2;
 	//Inputs are type of queue, thread list,
-	if(argc != 6)
+	if(argc != 5)
 	{
 		printf("Usage: <QueueType 1-SQueue, 2-CK, 3-Basic Queue, 4-Multiple Incoming Queues>, \nThreads-1,2,4,6,8,12,16,24,32,48,57,96,114,192,228,384,456,768,912,1024, \nRaw data file name: <name>,  \nSummary file name: <name>, \nClock Frequency in GHz: <3.4>\n");
 		exit(-1);
@@ -591,12 +599,10 @@ int main(int argc, char **argv) {
 
 		fileName1 = argv[3];
 		fileName2 = argv[4];
-		clockFreq = atof(argv[5]);
 
 		printf("Num of samples: %d\n", NUM_SAMPLES);
 		printf("Thread list count: %d\n", threadCount);
 		printf("Output files: %s, %s\n", fileName1, fileName2);
-		printf("Clock frequency: %f\n", clockFreq);
 	}
 	int rdtsc_overhead_ticks = 0;
 
@@ -638,6 +644,32 @@ int main(int argc, char **argv) {
 	fprintf(rfp, "RDTSC time: %d\n", rdtsc_overhead_ticks);
 #endif
 	fprintf(afp, "RDTSC time: %d\n", rdtsc_overhead_ticks);
+
+	struct timezone tz;
+	struct timeval tvstart, tvstop;
+	unsigned long long int cycles[2];
+	unsigned long microseconds;
+
+	memset(&tz, 0, sizeof(tz));
+
+	gettimeofday(&tvstart, &tz);
+	cycles[0] = getticks();
+	gettimeofday(&tvstart, &tz);
+
+	usleep(250000);
+
+	gettimeofday(&tvstop, &tz);
+	cycles[1] = getticks();
+	gettimeofday(&tvstop, &tz);
+
+	microseconds = ((tvstop.tv_sec-tvstart.tv_sec)*1000000) + (tvstop.tv_usec-tvstart.tv_usec);
+
+	clockFreq = (cycles[1]-cycles[0]) / (microseconds * 1000);
+#ifdef RAW
+	fprintf(rfp, "Clock Freq: %f\n", clockFreq);
+#endif
+	fprintf(afp, "Clock Freq: %f\n", clockFreq);
+	printf("Clock Freq Obtained: %f\n", clockFreq);
 
 #endif
 	//Initialization
@@ -702,20 +734,7 @@ int main(int argc, char **argv) {
 				pthread_join(worker_threads[i], NULL);
 			}
 
-			for(int i=0;i<NUM_SAMPLES;i++)
-			{
-#ifdef RAW
-				double enqueueTime = ((enqueuetimestamp[i]-rdtsc_overhead_ticks)/clockFreq);
-				double dequeueTime = ((dequeuetimestamp[i]-rdtsc_overhead_ticks)/clockFreq);
-
-				fprintf(rfp, "%d %d %ld %ld %d %lf %lf\n", queueType, NUM_SAMPLES, (enqueuetimestamp[i]-rdtsc_overhead_ticks), (dequeuetimestamp[i]-rdtsc_overhead_ticks), CUR_NUM_THREADS, enqueueTime,dequeueTime);
-#endif
-#ifdef VERBOSE
-				printf("%d %d %ld %ld %d %lf %lf\n", queueType, NUM_SAMPLES, (enqueuetimestamp[i]-rdtsc_overhead_ticks), (dequeuetimestamp[i]-rdtsc_overhead_ticks), CUR_NUM_THREADS, enqueueTime, dequeueTime);
-#endif
-			}
-
-			ComputeSummary(queueType, CUR_NUM_THREADS, afp, rdtsc_overhead_ticks);
+			ComputeSummary(queueType, CUR_NUM_THREADS, afp, rfp, rdtsc_overhead_ticks);
 
 			free(enqueuetimestamp);
 			free(dequeuetimestamp);
@@ -763,20 +782,7 @@ int main(int argc, char **argv) {
 				pthread_join(worker_threads[i], NULL);
 			}
 
-			for(int i=0;i<NUM_SAMPLES;i++)
-			{
-#ifdef RAW
-				double enqueueTime = ((enqueuetimestamp[i]-rdtsc_overhead_ticks)/clockFreq);
-				double dequeueTime = ((dequeuetimestamp[i]-rdtsc_overhead_ticks)/clockFreq);
-
-				fprintf(rfp, "%d %d %ld %ld %d %lf %lf\n", queueType, NUM_SAMPLES, (enqueuetimestamp[i]-rdtsc_overhead_ticks), (dequeuetimestamp[i]-rdtsc_overhead_ticks), CUR_NUM_THREADS, enqueueTime,dequeueTime);
-#endif
-#ifdef VERBOSE
-				printf("%d %d %ld %ld %d %lf %lf\n", queueType, NUM_SAMPLES, (enqueuetimestamp[i]-rdtsc_overhead_ticks), (dequeuetimestamp[i]-rdtsc_overhead_ticks), CUR_NUM_THREADS, enqueueTime, dequeueTime);
-#endif
-			}
-
-			ComputeSummary(queueType, CUR_NUM_THREADS, afp, rdtsc_overhead_ticks);
+			ComputeSummary(queueType, CUR_NUM_THREADS, afp, rfp, rdtsc_overhead_ticks);
 
 			free(enqueuetimestamp);
 			free(dequeuetimestamp);
@@ -813,20 +819,7 @@ int main(int argc, char **argv) {
 				pthread_join(worker_threads[i], NULL);
 			}
 
-			for(int i=0;i<NUM_SAMPLES;i++)
-			{
-#ifdef RAW
-				double enqueueTime = ((enqueuetimestamp[i]-rdtsc_overhead_ticks)/clockFreq);
-				double dequeueTime = ((dequeuetimestamp[i]-rdtsc_overhead_ticks)/clockFreq);
-
-				fprintf(rfp, "%d %d %ld %ld %d %lf %lf\n", queueType, NUM_SAMPLES, (enqueuetimestamp[i]-rdtsc_overhead_ticks), (dequeuetimestamp[i]-rdtsc_overhead_ticks), CUR_NUM_THREADS, enqueueTime,dequeueTime);
-#endif
-#ifdef VERBOSE
-				printf("%d %d %ld %ld %d %lf %lf\n", queueType, NUM_SAMPLES, (enqueuetimestamp[i]-rdtsc_overhead_ticks), (dequeuetimestamp[i]-rdtsc_overhead_ticks), CUR_NUM_THREADS, enqueueTime, dequeueTime);
-#endif
-			}
-
-			ComputeSummary(queueType, CUR_NUM_THREADS, afp, rdtsc_overhead_ticks);
+			ComputeSummary(queueType, CUR_NUM_THREADS, afp, rfp, rdtsc_overhead_ticks);
 
 			free(enqueuetimestamp);
 			free(dequeuetimestamp);
@@ -869,20 +862,7 @@ int main(int argc, char **argv) {
 				pthread_join(worker_threads[i], NULL);
 			}
 
-			for(int i=0;i<NUM_SAMPLES;i++)
-			{
-#ifdef RAW
-				double enqueueTime = ((enqueuetimestamp[i]-rdtsc_overhead_ticks)/clockFreq);
-				double dequeueTime = ((dequeuetimestamp[i]-rdtsc_overhead_ticks)/clockFreq);
-
-				fprintf(rfp, "%d %d %ld %ld %d %lf %lf\n", queueType, NUM_SAMPLES, (enqueuetimestamp[i]-rdtsc_overhead_ticks), (dequeuetimestamp[i]-rdtsc_overhead_ticks), CUR_NUM_THREADS, enqueueTime,dequeueTime);
-#endif
-#ifdef VERBOSE
-				printf("%d %d %ld %ld %d %lf %lf\n", queueType, NUM_SAMPLES, (enqueuetimestamp[i]-rdtsc_overhead_ticks), (dequeuetimestamp[i]-rdtsc_overhead_ticks), CUR_NUM_THREADS, enqueueTime, dequeueTime);
-#endif
-			}
-
-			ComputeSummary(queueType, CUR_NUM_THREADS, afp, rdtsc_overhead_ticks);
+			ComputeSummary(queueType, CUR_NUM_THREADS, afp, rfp, rdtsc_overhead_ticks);
 
 			free(enqueuetimestamp);
 			free(dequeuetimestamp);

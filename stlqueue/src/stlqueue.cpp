@@ -62,7 +62,7 @@ void SortTicks(ticks* numTicks)
 	}
 }
 
-void ComputeSummary(int type, int numThreads, FILE* afp, int rdtsc_overhead)
+void ComputeSummary(int type, int numThreads, FILE* afp, FILE* rfp, int rdtsc_overhead)
 {
 
 	using namespace std;
@@ -95,6 +95,18 @@ for (int i=0;i<NUM_SAMPLES;i++)
 
 SortTicks(numEnqueueTicks);
 SortTicks(numDequeueTicks);
+
+for(int i=0;i<NUM_SAMPLES;i++)
+		{
+			double enqueueTime = (numEnqueueTicks[i]/clockFreq);
+			double dequeueTime = (numDequeueTicks[i]/clockFreq);
+#ifdef RAW
+			fprintf(rfp, "%d %d %ld %ld %d %lf %lf\n", type, NUM_SAMPLES, (numEnqueueTicks[i]), (numDequeueTicks[i]), CUR_NUM_THREADS, enqueueTime, dequeueTime);
+#endif
+#ifdef VERBOSE
+			cout << type << " " << NUM_SAMPLES << " " << (numEnqueueTicks[i]) << " " << (numDequeueTicks[i]) << " " << CUR_NUM_THREADS << " " << enqueueTime << " " << dequeueTime << endl;
+#endif
+		}
 
 enqueuetickMin = numEnqueueTicks[0];
 enqueuetickMax = numEnqueueTicks[NUM_SAMPLES-1];
@@ -316,6 +328,34 @@ int main(int argc, char* argv[])
 	fprintf(rfp, "RDTSC time: %d\n", rdtsc_overhead_ticks);
 	fprintf(afp, "RDTSC time: %d\n", rdtsc_overhead_ticks);
 
+	struct timezone tz;
+	struct timeval tvstart, tvstop;
+	unsigned long long int cycles[2];
+	unsigned long microseconds;
+
+	memset(&tz, 0, sizeof(tz));
+
+	for(int i=0;i<NUM_SAMPLES;i++)
+	{
+		gettimeofday(&tvstart, &tz);
+		cycles[0] = getticks();
+		gettimeofday(&tvstart, &tz);
+	}
+//	usleep(250000);
+//
+//	gettimeofday(&tvstop, &tz);
+//	cycles[1] = getticks();
+//	gettimeofday(&tvstop, &tz);
+
+	microseconds = ((tvstop.tv_sec-tvstart.tv_sec)*1000000) + (tvstop.tv_usec-tvstart.tv_usec);
+
+	clockFreq = (cycles[1]-cycles[0]) / (microseconds * 1000);
+#ifdef RAW
+	fprintf(rfp, "Clock Freq: %f\n", clockFreq);
+#endif
+	fprintf(afp, "Clock Freq: %f\n", clockFreq);
+	cout << "Clock Freq Obtained: " << clockFreq << endl;
+
 #endif
 	//Initialization
 	enqueuetimestamp = (ticks *)malloc(sizeof(ticks)*NUM_SAMPLES);
@@ -352,19 +392,7 @@ int main(int argc, char* argv[])
 		producer_threads.join_all();
 		consumer_threads.join_all();
 
-		for(int i=0;i<NUM_SAMPLES;i++)
-		{
-			double enqueueTime = ((enqueuetimestamp[i]-rdtsc_overhead_ticks)/clockFreq);
-			double dequeueTime = ((dequeuetimestamp[i]-rdtsc_overhead_ticks)/clockFreq);
-#ifdef RAW
-			fprintf(rfp, "%d %d %ld %ld %d %lf %lf\n", queueType, NUM_SAMPLES, (enqueuetimestamp[i]-rdtsc_overhead_ticks), (dequeuetimestamp[i]-rdtsc_overhead_ticks), CUR_NUM_THREADS, enqueueTime,dequeueTime);
-#endif
-#ifdef VERBOSE
-			cout << queueType << " " << NUM_SAMPLES << " " << (enqueuetimestamp[i]-rdtsc_overhead_ticks) << " " << (dequeuetimestamp[i]-rdtsc_overhead_ticks) << " " << CUR_NUM_THREADS << " " << enqueueTime << " " << dequeueTime << endl;
-#endif
-		}
-
-		ComputeSummary(queueType, CUR_NUM_THREADS, afp, rdtsc_overhead_ticks);
+		ComputeSummary(queueType, CUR_NUM_THREADS, afp, rfp, rdtsc_overhead_ticks);
 
 		free(enqueuetimestamp);
 		free(dequeuetimestamp);
