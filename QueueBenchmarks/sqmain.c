@@ -607,10 +607,30 @@ int main(int argc, char **argv) {
 	int rdtsc_overhead_ticks = 0;
 
 	//Open file for storing data
-#ifdef RAW
+
 	FILE *rfp=fopen(fileName1, "a");
-#endif
 	FILE *afp=fopen(fileName2, "a");
+
+	struct timezone tz;
+		struct timeval tvstart, tvstop;
+		unsigned long long int cycles[2];
+		unsigned long microseconds;
+
+		memset(&tz, 0, sizeof(tz));
+
+		gettimeofday(&tvstart, &tz);
+		cycles[0] = getticks();
+		gettimeofday(&tvstart, &tz);
+
+		usleep(250000);
+
+		gettimeofday(&tvstop, &tz);
+		cycles[1] = getticks();
+		gettimeofday(&tvstop, &tz);
+
+		microseconds = ((tvstop.tv_sec-tvstart.tv_sec)*1000000) + (tvstop.tv_usec-tvstart.tv_usec);
+
+		clockFreq = (cycles[1]-cycles[0]) / (microseconds * 1000);
 
 #ifdef CALIBRATE
 	//Calibrate RDTSC
@@ -645,26 +665,6 @@ int main(int argc, char **argv) {
 #endif
 	fprintf(afp, "RDTSC time: %d\n", rdtsc_overhead_ticks);
 
-	struct timezone tz;
-	struct timeval tvstart, tvstop;
-	unsigned long long int cycles[2];
-	unsigned long microseconds;
-
-	memset(&tz, 0, sizeof(tz));
-
-	gettimeofday(&tvstart, &tz);
-	cycles[0] = getticks();
-	gettimeofday(&tvstart, &tz);
-
-	usleep(250000);
-
-	gettimeofday(&tvstop, &tz);
-	cycles[1] = getticks();
-	gettimeofday(&tvstop, &tz);
-
-	microseconds = ((tvstop.tv_sec-tvstart.tv_sec)*1000000) + (tvstop.tv_usec-tvstart.tv_usec);
-
-	clockFreq = (cycles[1]-cycles[0]) / (microseconds * 1000);
 #ifdef RAW
 	fprintf(rfp, "Clock Freq: %f\n", clockFreq);
 #endif
