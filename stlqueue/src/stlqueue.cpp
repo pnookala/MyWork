@@ -45,88 +45,114 @@ void ResetCounters() {
 	numDequeueThreadsCreated = 0;
 }
 
+void SortTicks(ticks* numTicks)
+{
+	ticks a;
+	for (int i = 0; i < NUM_SAMPLES; i++)
+	{
+		for (int j = i + 1; j < NUM_SAMPLES; j++)
+		{
+			if (numTicks[i] > numTicks[j])
+			{
+				a =  numTicks[i];
+				numTicks[i] = numTicks[j];
+				numTicks[j] = a;
+			}
+		}
+	}
+}
+
 void ComputeSummary(int type, int numThreads, FILE* afp, int rdtsc_overhead)
 {
 
 	using namespace std;
 #ifdef LATENCY
-	ticks totalEnqueueTicks = 0,  totalDequeueTicks = 0;
-	ticks enqueuetickMin = enqueuetimestamp[0]-rdtsc_overhead;
-	ticks enqueuetickMax = enqueuetimestamp[0]-rdtsc_overhead;
-	ticks dequeuetickMin = dequeuetimestamp[0]-rdtsc_overhead;
-	ticks dequeuetickMax = dequeuetimestamp[0]-rdtsc_overhead;
-	ticks *numEnqueueTicks, *numDequeueTicks;
-	numEnqueueTicks = (ticks *)malloc(sizeof(ticks)*NUM_SAMPLES);
-	numDequeueTicks = (ticks *)malloc(sizeof(ticks)*NUM_SAMPLES);
+ticks totalEnqueueTicks = 0,  totalDequeueTicks = 0;
+ticks enqueuetickMin = enqueuetimestamp[0]-rdtsc_overhead;
+ticks enqueuetickMax = enqueuetimestamp[0]-rdtsc_overhead;
+ticks dequeuetickMin = dequeuetimestamp[0]-rdtsc_overhead;
+ticks dequeuetickMax = dequeuetimestamp[0]-rdtsc_overhead;
+ticks *numEnqueueTicks, *numDequeueTicks;
+numEnqueueTicks = (ticks *)malloc(sizeof(ticks)*NUM_SAMPLES);
+numDequeueTicks = (ticks *)malloc(sizeof(ticks)*NUM_SAMPLES);
 
-	//compute the elapsed time per invocation, and find min and max
-	for (int i=0;i<NUM_SAMPLES;i++)
-	{
-		//compute the elapsed time per invocation, and subtract the cost of the emtpy loop cost per iteration
-		numEnqueueTicks[i]=enqueuetimestamp[i]-rdtsc_overhead;
+//compute the elapsed time per invocation, and find min and max
+for (int i=0;i<NUM_SAMPLES;i++)
+{
+	//compute the elapsed time per invocation, and subtract the cost of the emtpy loop cost per iteration
+	numEnqueueTicks[i]=enqueuetimestamp[i]-rdtsc_overhead;
 
-		totalEnqueueTicks += numEnqueueTicks[i];
-		if (numEnqueueTicks[i]>enqueuetickMax) enqueuetickMax = numEnqueueTicks[i];
-		if (numEnqueueTicks[i]<enqueuetickMin) enqueuetickMin = numEnqueueTicks[i];
+	totalEnqueueTicks += numEnqueueTicks[i];
+	//if (numEnqueueTicks[i]>enqueuetickMax) enqueuetickMax = numEnqueueTicks[i];
+	//if (numEnqueueTicks[i]<enqueuetickMin) enqueuetickMin = numEnqueueTicks[i];
 
-		numDequeueTicks[i]= dequeuetimestamp[i]-rdtsc_overhead;
+	numDequeueTicks[i]= dequeuetimestamp[i]-rdtsc_overhead;
 
-		totalDequeueTicks += numDequeueTicks[i];
-		if (numDequeueTicks[i]>dequeuetickMax) dequeuetickMax = numDequeueTicks[i];
-		if (numDequeueTicks[i]<dequeuetickMin) dequeuetickMin = numDequeueTicks[i];
-	}
+	totalDequeueTicks += numDequeueTicks[i];
+	//if (numDequeueTicks[i]>dequeuetickMax) dequeuetickMax = numDequeueTicks[i];
+	//if (numDequeueTicks[i]<dequeuetickMin) dequeuetickMin = numDequeueTicks[i];
+}
 
-	//compute average
-	double tickEnqueueAverage = (totalEnqueueTicks/(NUM_SAMPLES));
-	double tickDequeueAverage = (totalDequeueTicks/(NUM_SAMPLES));
+SortTicks(numEnqueueTicks);
+SortTicks(numDequeueTicks);
 
-	std::cout << "Num threads: " << numThreads << " Num samples: " << NUM_SAMPLES << std::endl;
-	std::cout << "Enqueue Min: " << enqueuetickMin << std::endl;
-	std::cout << "Dequeue Min: " << dequeuetickMin << std::endl;
+enqueuetickMin = numEnqueueTicks[0];
+enqueuetickMax = numEnqueueTicks[NUM_SAMPLES-1];
 
-	std::cout << "Enqueue Max: " << enqueuetickMax << std::endl;
-	std::cout << "Dequeue Max: " << dequeuetickMax << std::endl;
+dequeuetickMin = numDequeueTicks[0];
+dequeuetickMax = numDequeueTicks[NUM_SAMPLES-1];
 
-	std::cout << "Average Enqueue : " << tickEnqueueAverage <<std::endl;
-	std::cout << "Average Dequeue : " << tickDequeueAverage<<std::endl;
+//compute average
+double tickEnqueueAverage = (totalEnqueueTicks/(NUM_SAMPLES));
+double tickDequeueAverage = (totalDequeueTicks/(NUM_SAMPLES));
 
-	ticks enqueuetickmedian = 0, dequeuetickmedian = 0;
+std::cout << "Num threads: " << numThreads << " Num samples: " << NUM_SAMPLES << std::endl;
+std::cout << "Enqueue Min: " << enqueuetickMin << std::endl;
+std::cout << "Dequeue Min: " << dequeuetickMin << std::endl;
 
-	if(NUM_SAMPLES % 2==0) {
-	        // if there is an even number of elements, return mean of the two elements in the middle
-	        enqueuetickmedian = ((numEnqueueTicks[(NUM_SAMPLES/2)] + numEnqueueTicks[(NUM_SAMPLES/2) - 1]) / 2.0);
-	        dequeuetickmedian = ((numDequeueTicks[(NUM_SAMPLES/2)] + numDequeueTicks[(NUM_SAMPLES/2) - 1]) / 2.0);
-	    } else {
-	        // else return the element in the middle
-	        enqueuetickmedian = numEnqueueTicks[(NUM_SAMPLES/2)];
-	        dequeuetickmedian = numDequeueTicks[(NUM_SAMPLES/2)];
-	    }
+std::cout << "Enqueue Max: " << enqueuetickMax << std::endl;
+std::cout << "Dequeue Max: " << dequeuetickMax << std::endl;
 
-	std::cout << "Median Enqueue : " << enqueuetickmedian <<std::endl;
-	std::cout << "Median Dequeue : " << dequeuetickmedian<<std::endl;
+std::cout << "Average Enqueue : " << tickEnqueueAverage <<std::endl;
+std::cout << "Average Dequeue : " << tickDequeueAverage<<std::endl;
 
-	double enqueueMinTime = ((enqueuetickMin)/clockFreq);
-	double dequeueMinTime = ((dequeuetickMin)/clockFreq);
-	double enqueueMaxTime = ((enqueuetickMax)/clockFreq);
-	double dequeueMaxTime = ((dequeuetickMax)/clockFreq);
-	double enqueueAvgTime = ((tickEnqueueAverage)/clockFreq);
-	double dequeueAvgTime = ((tickDequeueAverage)/clockFreq);
+ticks enqueuetickmedian = 0, dequeuetickmedian = 0;
 
-	std::cout << "Enqueue Min Time (ns): " << enqueueMinTime << std::endl;
-	std::cout << "Dequeue Min Time (ns): " << dequeueMinTime << std::endl;
+if(NUM_SAMPLES % 2==0) {
+	// if there is an even number of elements, return mean of the two elements in the middle
+	enqueuetickmedian = ((numEnqueueTicks[(NUM_SAMPLES/2)] + numEnqueueTicks[(NUM_SAMPLES/2) - 1]) / 2.0);
+	dequeuetickmedian = ((numDequeueTicks[(NUM_SAMPLES/2)] + numDequeueTicks[(NUM_SAMPLES/2) - 1]) / 2.0);
+} else {
+	// else return the element in the middle
+	enqueuetickmedian = numEnqueueTicks[(NUM_SAMPLES/2)];
+	dequeuetickmedian = numDequeueTicks[(NUM_SAMPLES/2)];
+}
 
-	std::cout << "Enqueue Max Time (ns): " << enqueueMaxTime << std::endl;
-	std::cout << "Dequeue Max Time (ns): " << dequeueMaxTime << std::endl;
+std::cout << "Median Enqueue : " << enqueuetickmedian <<std::endl;
+std::cout << "Median Dequeue : " << dequeuetickmedian<<std::endl;
 
-	std::cout << "Average Enqueue Time (ns): " << enqueueAvgTime << std::endl;
-	std::cout << "Average Dequeue Time (ns): " << dequeueAvgTime << std::endl;
+double enqueueMinTime = ((enqueuetickMin)/clockFreq);
+double dequeueMinTime = ((dequeuetickMin)/clockFreq);
+double enqueueMaxTime = ((enqueuetickMax)/clockFreq);
+double dequeueMaxTime = ((dequeuetickMax)/clockFreq);
+double enqueueAvgTime = ((tickEnqueueAverage)/clockFreq);
+double dequeueAvgTime = ((tickDequeueAverage)/clockFreq);
 
-	fprintf(afp, "%d %d %d %ld %ld %ld %ld %lf %lf %ld %ld %lf %lf %lf %lf %lf %lf\n",type, numThreads, NUM_SAMPLES, enqueuetickMin, dequeuetickMin, enqueuetickMax, dequeuetickMax, tickEnqueueAverage, tickDequeueAverage, enqueuetickmedian, dequeuetickmedian, enqueueMinTime, dequeueMinTime, enqueueMaxTime, dequeueMaxTime, enqueueAvgTime, dequeueAvgTime);
+std::cout << "Enqueue Min Time (ns): " << enqueueMinTime << std::endl;
+std::cout << "Dequeue Min Time (ns): " << dequeueMinTime << std::endl;
+
+std::cout << "Enqueue Max Time (ns): " << enqueueMaxTime << std::endl;
+std::cout << "Dequeue Max Time (ns): " << dequeueMaxTime << std::endl;
+
+std::cout << "Average Enqueue Time (ns): " << enqueueAvgTime << std::endl;
+std::cout << "Average Dequeue Time (ns): " << dequeueAvgTime << std::endl;
+
+fprintf(afp, "%d %d %d %ld %ld %ld %ld %lf %lf %ld %ld %lf %lf %lf %lf %lf %lf\n",type, numThreads, NUM_SAMPLES, enqueuetickMin, dequeuetickMin, enqueuetickMax, dequeuetickMax, tickEnqueueAverage, tickDequeueAverage, enqueuetickmedian, dequeuetickmedian, enqueueMinTime, dequeueMinTime, enqueueMaxTime, dequeueMaxTime, enqueueAvgTime, dequeueAvgTime);
 #endif
 #ifdef THROUGHPUT
-	printf("NumSamples:%d NumThreads:%d EnqueueThroughput:%d DequeueThroughput:%d\n", NUM_SAMPLES, numThreads, enqueuethroughput, dequeuethroughput);
-	fprintf(afp, "NumSamples NumThreads EnqueueThroughput DequeueThroughput\n");
-	fprintf(afp, "%d %d %d %d\n", NUM_SAMPLES, numThreads, enqueuethroughput, dequeuethroughput);
+printf("NumSamples:%d NumThreads:%d EnqueueThroughput:%d DequeueThroughput:%d\n", NUM_SAMPLES, numThreads, enqueuethroughput, dequeuethroughput);
+fprintf(afp, "NumSamples NumThreads EnqueueThroughput DequeueThroughput\n");
+fprintf(afp, "%d %d %d %d\n", NUM_SAMPLES, numThreads, enqueuethroughput, dequeuethroughput);
 #endif
 }
 
@@ -139,11 +165,11 @@ void consumer(void)
 
 	int NUM_SAMPLES_PER_THREAD = NUM_SAMPLES / NUM_THREADS;
 	//Wait until all threads call the barrier_wait. This is used for getting highest contention with threads
-		pthread_barrier_wait(&barrier);
+	pthread_barrier_wait(&barrier);
 
-	#ifdef VERBOSE
-		printf("Dequeue thread woke up\n");
-	#endif
+#ifdef VERBOSE
+	printf("Dequeue thread woke up\n");
+#endif
 #ifdef THROUGHPUT
 	start_tick = getticks();
 #endif
@@ -176,13 +202,13 @@ void producer(void)
 
 	int NUM_SAMPLES_PER_THREAD = NUM_SAMPLES / NUM_THREADS;
 	pthread_barrier_wait(&barrier);
-	#ifdef VERBOSE
-		printf("Enqueue thread woke up\n");
-	#endif
+#ifdef VERBOSE
+	printf("Enqueue thread woke up\n");
+#endif
 
-	#ifdef THROUGHPUT
-		start_tick = getticks();
-	#endif
+#ifdef THROUGHPUT
+	start_tick = getticks();
+#endif
 	for (int i=0;i<NUM_SAMPLES_PER_THREAD;i++)
 	{
 #ifdef LATENCY

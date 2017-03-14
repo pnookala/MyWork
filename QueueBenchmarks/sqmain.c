@@ -36,8 +36,8 @@ struct timeval sTime, eTime;
 float clockFreq;
 
 typedef long unsigned int ticks;
-#define NUM_THREADS 4
-#define NUM_CPUS 2
+#define NUM_THREADS 1
+#define NUM_CPUS 24
 #define NUM_QUEUES (NUM_THREADS/2)
 
 ticks *enqueuetimestamp, *dequeuetimestamp;
@@ -52,9 +52,10 @@ pthread_mutex_t cond_var_lock =  PTHREAD_MUTEX_INITIALIZER;
 int enqueuethroughput, dequeuethroughput = 0;
 
 static pthread_barrier_t barrier;
+pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 
 //An alternative way is to use rdtscp which will wait until all previous instructions have been executed before reading the counter; might be problematic on multi-core machines
-static __inline__ ticks getticks_serial(void) {
+static __inline__ ticks getticks(void) {
 	ticks tsc;
 	__asm__ __volatile__(
 			"rdtscp;"
@@ -68,7 +69,7 @@ static __inline__ ticks getticks_serial(void) {
 }
 
 //get number of ticks, could be problematic on modern CPUs with out of order execution
-static __inline__ ticks getticks(void) {
+static __inline__ ticks getticks_old(void) {
 	ticks tsc;
 	__asm__ __volatile__(
 			"rdtsc;"
@@ -112,10 +113,11 @@ void *worker_handler(void * in) {
 		Dequeue();
 #ifdef LATENCY
 		end_tick = getticks();
-
+		pthread_mutex_lock(&lock);
 		dequeuetimestamp[numDequeue] = (end_tick-start_tick);
 
 		__sync_fetch_and_add(&numDequeue,1);
+		pthread_mutex_unlock(&lock);
 #endif
 	}
 #ifdef THROUGHPUT
@@ -163,9 +165,11 @@ void *enqueue_handler(void * in)
 		Enqueue((atom) (i+1));
 #ifdef LATENCY
 		end_tick = getticks();
+		pthread_mutex_lock(&lock);
 		enqueuetimestamp[numEnqueue] = (end_tick-start_tick);
 
 		__sync_fetch_and_add(&numEnqueue,1);
+		pthread_mutex_unlock(&lock);
 #endif
 
 	}
@@ -417,6 +421,23 @@ void *basicworker_handler(void *_queue)
 	return 0;
 }
 
+void SortTicks(ticks* numTicks)
+{
+	ticks a;
+	for (int i = 0; i < NUM_SAMPLES; i++)
+	    {
+	        for (int j = i + 1; j < NUM_SAMPLES; j++)
+	        {
+	            if (numTicks[i] > numTicks[j])
+	            {
+	                a =  numTicks[i];
+	                numTicks[i] = numTicks[j];
+	                numTicks[j] = a;
+	            }
+	        }
+	    }
+}
+
 void ResetCounters() {
 	numEnqueue = 0;
 	numDequeue = 0;
@@ -445,15 +466,24 @@ void ComputeSummary(int type, int numThreads, FILE* afp, int rdtsc_overhead)
 		numEnqueueTicks[i]=enqueuetimestamp[i]-rdtsc_overhead;
 
 		totalEnqueueTicks += numEnqueueTicks[i];
-		if (numEnqueueTicks[i]>enqueuetickMax) enqueuetickMax = numEnqueueTicks[i];
-		if (numEnqueueTicks[i]<enqueuetickMin) enqueuetickMin = numEnqueueTicks[i];
+		//if (numEnqueueTicks[i]>enqueuetickMax) enqueuetickMax = numEnqueueTicks[i];
+		//if (numEnqueueTicks[i]<enqueuetickMin) enqueuetickMin = numEnqueueTicks[i];
 
 		numDequeueTicks[i]= dequeuetimestamp[i]-rdtsc_overhead;
 
 		totalDequeueTicks += numDequeueTicks[i];
-		if (numDequeueTicks[i]>dequeuetickMax) dequeuetickMax = numDequeueTicks[i];
-		if (numDequeueTicks[i]<dequeuetickMin) dequeuetickMin = numDequeueTicks[i];
+		//if (numDequeueTicks[i]>dequeuetickMax) dequeuetickMax = numDequeueTicks[i];
+		//if (numDequeueTicks[i]<dequeuetickMin) dequeuetickMin = numDequeueTicks[i];
 	}
+
+	SortTicks(numEnqueueTicks);
+	SortTicks(numDequeueTicks);
+
+	enqueuetickMin = numEnqueueTicks[0];
+	enqueuetickMax = numEnqueueTicks[NUM_SAMPLES-1];
+
+	dequeuetickMin = numDequeueTicks[0];
+	dequeuetickMax = numDequeueTicks[NUM_SAMPLES-1];
 
 	//compute average
 	double tickEnqueueAverage = (totalEnqueueTicks/(NUM_SAMPLES));
@@ -629,7 +659,7 @@ int main(int argc, char **argv) {
 	printf("QueueType NumSamples EnqueueCycles DequeueCycles NumThreads EnqueueTime(ns) DequeueTime(ns)\n");
 #endif
 #ifdef LATENCY
-	fprintf(afp, "QueueType NumThreads EnqueueMin DequeueMin EnqueueMax DequeueMax EnqueueAverage DequeueAverage EnqueueMedian DequeueMedian EnqueueMinTime DequeueMinTime EnqueueMaxTime DequeueMaxTime EnqueueAverageTime DequeueAverageTime\n");
+	fprintf(afp, "QueueType NumThreads NumSamples EnqueueMin DequeueMin EnqueueMax DequeueMax EnqueueAverage DequeueAverage EnqueueMedian DequeueMedian EnqueueMinTime DequeueMinTime EnqueueMaxTime DequeueMaxTime EnqueueAverageTime DequeueAverageTime\n");
 #endif
 
 	//Execute benchmarks for various types of queues
@@ -698,7 +728,7 @@ int main(int argc, char **argv) {
 			ck_ring_buffer_t *buf;
 			ck_ring_t ring;
 
-			size = 8; //Hardcoded for benchmarking purposes
+			size = NUM_SAMPLES; //Hardcoded for benchmarking purposes
 
 			buf = malloc(sizeof(ck_ring_buffer_t) * size);
 
