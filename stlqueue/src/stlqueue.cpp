@@ -23,7 +23,7 @@ static pthread_barrier_t barrier;
 boost::atomic_int producer_count(0);
 boost::atomic_int consumer_count(0);
 
-boost::lockfree::queue<int> queue(128);
+boost::lockfree::queue<int> queue(NUM_SAMPLES);
 
 static __inline__ ticks getticks(void) {
 	ticks tsc;

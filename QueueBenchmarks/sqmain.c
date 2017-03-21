@@ -29,7 +29,7 @@ struct entry {
 
 struct arg_struct {
 	ck_ring_buffer_t *buf;
-	ck_ring_t ring;
+	ck_ring_t *ring;
 };
 
 int r, size;
@@ -39,14 +39,14 @@ float clockFreq;
 
 typedef long unsigned int ticks;
 #define NUM_THREADS 1
-#define NUM_CPUS 24
-#define NUM_QUEUES (NUM_THREADS/2)
+#define NUM_CPUS 1
 
 ticks *enqueuetimestamp, *dequeuetimestamp;
 
 static int numEnqueue = 0;
 static int numDequeue = 0;
 static int CUR_NUM_THREADS = 0;
+static int NUM_QUEUES = 0;
 volatile int numEnqueueThreadsCreated = 0, numDequeueThreadsCreated = 0;
 pthread_cond_t cond_var = PTHREAD_COND_INITIALIZER;
 pthread_mutex_t cond_var_lock =  PTHREAD_MUTEX_INITIALIZER;
@@ -282,7 +282,7 @@ void *ck_worker_handler(void *arguments) {
 	struct arg_struct *args = (struct arg_struct *) arguments;
 	struct entry entry;
 	ck_ring_buffer_t *buf = args->buf;
-	ck_ring_t ring = args->ring;
+	ck_ring_t *ring = args->ring;
 	ticks start_tick = (ticks)0;
 	ticks end_tick = (ticks)0;
 
@@ -296,7 +296,11 @@ void *ck_worker_handler(void *arguments) {
 #ifdef LATENCY
 		start_tick = getticks();
 #endif
-		ck_ring_dequeue_mpmc(&ring, buf, &entry);
+		bool ret = false;
+
+		ret = ck_ring_dequeue_mpmc(ring, buf, &entry);
+		printf("Dequeue return: %d\n", ret);
+
 #ifdef LATENCY
 		end_tick = getticks();
 		dequeuetimestamp[numDequeue] = (end_tick-start_tick);
@@ -320,7 +324,7 @@ void *ck_worker_handler(void *arguments) {
 void *ck_enqueue_handler(void *arguments) {
 	struct arg_struct *args = (struct arg_struct *) arguments;
 	ck_ring_buffer_t *buf = args->buf;
-	ck_ring_t ring = args->ring;
+	ck_ring_t *ring = args->ring;
 	ticks start_tick = (ticks)0;
 	ticks end_tick = (ticks)0;
 	struct entry entry = { 0, 0 };
@@ -334,7 +338,8 @@ void *ck_enqueue_handler(void *arguments) {
 #ifdef LATENCY
 		start_tick = getticks();
 #endif
-		ck_ring_enqueue_mpmc(&ring, buf, &entry);
+		bool ret  = ck_ring_enqueue_mpmc(ring, buf, &entry);
+		printf("Enqueue return: %d\n", ret);
 #ifdef LATENCY
 		end_tick = getticks();
 		enqueuetimestamp[numEnqueue] = (end_tick-start_tick);
@@ -745,13 +750,14 @@ int main(int argc, char **argv) {
 		{
 			ResetCounters();
 			ck_ring_buffer_t *buf;
-			ck_ring_t ring;
+			ck_ring_t *ring;
 
 			size = NUM_SAMPLES; //Hardcoded for benchmarking purposes
 
 			buf = malloc(sizeof(ck_ring_buffer_t) * size);
+			ring = malloc(sizeof(ck_ring_t) * size);
 
-			ck_ring_init(&ring, size);
+			ck_ring_init(ring, size);
 
 			struct arg_struct args;
 			args.ring = ring;
@@ -828,11 +834,12 @@ int main(int argc, char **argv) {
 	case 4://Multiple Incoming Queues
 		for (int k = 0; k < threadCount; k++)
 		{
+			CUR_NUM_THREADS = (threads[k])/2;
+			NUM_QUEUES = (CUR_NUM_THREADS/2);
 			InitQueues(NUM_QUEUES);
 			ResetCounters();
 			enqueuetimestamp = (ticks *)malloc(sizeof(ticks)*NUM_SAMPLES);
 			dequeuetimestamp = (ticks *)malloc(sizeof(ticks)*NUM_SAMPLES);
-			CUR_NUM_THREADS = (threads[k])/2;
 
 			pthread_t *worker_threads;
 			pthread_t *enqueue_threads;
@@ -872,9 +879,9 @@ int main(int argc, char **argv) {
 		break;
 	}
 
-#ifdef RAW
+//#ifdef RAW
 	fclose(rfp);
-#endif
+//#endif
 
 	fclose(afp);
 	printf("Done!!\n");
