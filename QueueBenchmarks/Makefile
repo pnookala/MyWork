@@ -1,7 +1,13 @@
 CC = gcc
+<<<<<<< HEAD
 CFLAGS = -std=c99 -O2 -Wall -Wpedantic -Werror -DLATENCY -DCALIBRATE -DRAW #-DTHROUGHPUT #-DVERBOSE #-DCALIBRATE
 RAWFLAGS = -std=c99 -O2 -Wall -Wpedantic -Werror -DLATENCY -DRAW -DCALIBRATE #-DTHROUGHPUT #-DVERBOSE #-DCALIBRATE
 THFLAGS = -std=c99 -O2 -Wall -Wpedantic -Werror -DTHROUGHPUT -DCALIBRATE #-DVERBOSE #-DCALIBRATE
+=======
+CFLAGS = -std=c99 -O2 -Wall -Wpedantic -Werror -DLATENCY #-DCALIBRATE #-DTHROUGHPUT #-DVERBOSE #-DCALIBRATE
+RAWFLAGS = -std=c99 -O2 -Wall -Wpedantic -Werror -DLATENCY -DRAW #-DCALIBRATE #-DTHROUGHPUT #-DVERBOSE #-DCALIBRATE
+THFLAGS = -std=c99 -O2 -Wall -Wpedantic -Werror -DTHROUGHPUT #-DCALIBRATE #-DVERBOSE #-DCALIBRATE
+>>>>>>> 50c310c36fdee8ae79465fc834cc49851889060f
 OBJECTS = squeue.o squeuemultiple.o basicqueue.o sqmain.o
 LDFLAGS = -lrt -lpthread
 
