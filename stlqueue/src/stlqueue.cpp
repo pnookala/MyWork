@@ -6,7 +6,7 @@
 #include <pthread.h>
 
 const int NUM_THREADS = 1;
-static int NUM_SAMPLES = 8;//128000000;
+static int NUM_SAMPLES = 128000;
 typedef long unsigned int ticks;
 ticks *enqueuetimestamp, *dequeuetimestamp;
 float clockFreq;
@@ -20,15 +20,15 @@ int enqueuethroughput, dequeuethroughput = 0;
 
 static pthread_barrier_t barrier;
 
-boost::atomic_int producer_count(0);
-boost::atomic_int consumer_count(0);
+boost::atomic_int producer_count(CUR_NUM_THREADS);
+boost::atomic_int consumer_count(CUR_NUM_THREADS);
 
-boost::lockfree::queue<int> queue(128);
+boost::lockfree::queue<int> queue(NUM_SAMPLES);
 
 static __inline__ ticks getticks(void) {
 	ticks tsc;
 	__asm__ __volatile__(
-			"rdtsc;"
+			"rdtscp;"
 			"shl $32, %%rdx;"
 			"or %%rdx, %%rax"
 			: "=a"(tsc)
@@ -257,7 +257,7 @@ int main(int argc, char* argv[])
 	char* fileName1, *fileName2;
 
 	//Inputs are type of queue, thread list,
-	if(argc != 6)
+	if(argc != 5)
 	{
 		std::cout << "Usage: <QueueType 5-STL Boost Lockfree>, \nThreads-1,2,4,6,8,12,16,24,32,48,57,96,114,192,228,384,456,768,912,1024, \nRaw data file name: <name>,  \nSummary file name: <name>, \nClock Frequency in GHz: <3.4>\n";
 		exit(-1);
@@ -286,7 +286,7 @@ int main(int argc, char* argv[])
 		{
 			threads[threadCount] = atoi(thread);
 			threadCount++;
-			std::cout << " " << *thread;
+			std::cout << " " << thread;
 			thread = strtok (NULL, ",");
 		}
 
@@ -294,21 +294,40 @@ int main(int argc, char* argv[])
 
 		fileName1 = argv[3];
 		fileName2 = argv[4];
-		clockFreq = atof(argv[5]);
+		//clockFreq = atof(argv[5]);
 
 		std::cout << "Num of samples: " << NUM_SAMPLES << endl;
 		std::cout << "Thread list count: " << threadCount << endl;
 		std::cout << "Output files: " << fileName1 << " " << fileName2 << endl;
-		std::cout << "Clock frequency: " << clockFreq << endl;
+	//	std::cout << "Clock frequency: " << clockFreq << endl;
 	}
 	int rdtsc_overhead_ticks = 0;
 
 	//Open file for storing data
-#ifdef RAW
 	FILE *rfp=fopen(fileName1, "a");
-#endif
 	FILE *afp=fopen(fileName2, "a");
 
+struct timezone tz;
+        struct timeval tvstart, tvstop;
+        unsigned long long int cycles[2];
+        unsigned long microseconds;
+
+        memset(&tz, 0, sizeof(tz));
+
+       gettimeofday(&tvstart, &tz);
+		cycles[0] = getticks();
+		gettimeofday(&tvstart, &tz);
+
+		usleep(250000);
+
+		gettimeofday(&tvstop, &tz);
+		cycles[1] = getticks();
+		gettimeofday(&tvstop, &tz);
+
+        microseconds = ((tvstop.tv_sec-tvstart.tv_sec)*1000000) + (tvstop.tv_usec-tvstart.tv_usec);
+
+	clockFreq = (cycles[1]-cycles[0]) / (microseconds * 1000);
+	std::cout << "Clock frequency: " << clockFreq << endl;
 #ifdef CALIBRATE
 	//Calibrate RDTSC
 	ticks start_tick = (ticks)0;

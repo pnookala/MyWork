@@ -39,14 +39,15 @@ float clockFreq;
 
 typedef long unsigned int ticks;
 #define NUM_THREADS 1
-#define NUM_CPUS 24
-#define NUM_QUEUES (NUM_THREADS/2)
+#define NUM_CPUS 48
+//#define NUM_QUEUES (CUR_NUM_THREADS/2)
 
 ticks *enqueuetimestamp, *dequeuetimestamp;
 
 static int numEnqueue = 0;
 static int numDequeue = 0;
 static int CUR_NUM_THREADS = 0;
+static int NUM_QUEUES = 1;
 volatile int numEnqueueThreadsCreated = 0, numDequeueThreadsCreated = 0;
 pthread_cond_t cond_var = PTHREAD_COND_INITIALIZER;
 pthread_mutex_t cond_var_lock =  PTHREAD_MUTEX_INITIALIZER;
@@ -828,6 +829,8 @@ int main(int argc, char **argv) {
 	case 4://Multiple Incoming Queues
 		for (int k = 0; k < threadCount; k++)
 		{
+			NUM_QUEUES = (threads[k]/2);
+			printf("Number of queues: %d\n", NUM_QUEUES);
 			InitQueues(NUM_QUEUES);
 			ResetCounters();
 			enqueuetimestamp = (ticks *)malloc(sizeof(ticks)*NUM_SAMPLES);

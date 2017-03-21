@@ -1,0 +1,6 @@
+NumSamples NumThreads EnqueueThroughput DequeueThroughput
+128000 12 2741434 2050963
+NumSamples NumThreads EnqueueThroughput DequeueThroughput
+128000 16 3514033 2755886
+NumSamples NumThreads EnqueueThroughput DequeueThroughput
+128000 24 3249661 2205162
