@@ -109,8 +109,12 @@ void *worker_handler(void * in) {
 	CPU_SET(my_cpu % NUM_CPUS, &set);
 
 	pthread_setaffinity_np(pthread_self(), sizeof(set), &set);
-
+#ifdef LATENCY
 	ticks start_tick, end_tick;
+#endif
+#ifdef THROUGHPUT
+	ticks st, et;
+#endif
 
 	int NUM_SAMPLES_PER_THREAD = NUM_SAMPLES / CUR_NUM_THREADS;
 	//Wait until all threads call the barrier_wait. This is used for getting highest contention with threads
@@ -121,7 +125,7 @@ void *worker_handler(void * in) {
 #endif
 
 #ifdef THROUGHPUT
-	start_tick = getticks();
+	st = getticks();
 #endif
 	for (int i = 0; i < NUM_SAMPLES_PER_THREAD; i++)
 	{
@@ -139,9 +143,9 @@ void *worker_handler(void * in) {
 #endif
 	}
 #ifdef THROUGHPUT
-	end_tick = getticks();
+	et = getticks();
 	pthread_mutex_lock(&lock);
-	ticks diff_tick = end_tick - start_tick;
+	ticks diff_tick = et - st;
 	double elapsed = ((diff_tick*1E-9))/clockFreq;
 	dequeuethroughput += ((NUM_SAMPLES_PER_THREAD)/elapsed);
 	pthread_mutex_unlock(&lock);
@@ -162,8 +166,12 @@ void *enqueue_handler(void * in)
 
 	pthread_setaffinity_np(pthread_self(), sizeof(set), &set);
 
-	ticks start_tick = (ticks)0;
-	ticks end_tick = (ticks)0;
+#ifdef LATENCY
+	ticks start_tick, end_tick;
+#endif
+#ifdef THROUGHPUT
+	ticks st, et;
+#endif
 
 	int NUM_SAMPLES_PER_THREAD = NUM_SAMPLES / CUR_NUM_THREADS;
 	pthread_barrier_wait(&barrier);
@@ -172,7 +180,7 @@ void *enqueue_handler(void * in)
 #endif
 
 #ifdef THROUGHPUT
-	start_tick = getticks();
+	st = getticks();
 #endif
 	for (int i = 0; i < NUM_SAMPLES_PER_THREAD; i++)
 	{
@@ -191,9 +199,9 @@ void *enqueue_handler(void * in)
 
 	}
 #ifdef THROUGHPUT
-	end_tick = getticks();
+	et = getticks();
 	pthread_mutex_lock(&lock);
-	ticks diff_tick = end_tick - start_tick;
+	ticks diff_tick = et - st;
 	double elapsed = ((diff_tick*1E-9))/clockFreq;
 	enqueuethroughput += ((NUM_SAMPLES_PER_THREAD)/elapsed);
 	pthread_mutex_unlock(&lock);
@@ -212,12 +220,17 @@ void *workermultiple_handler(void * in) {
 
 	pthread_setaffinity_np(pthread_self(), sizeof(set), &set);
 
+#ifdef LATENCY
 	ticks start_tick, end_tick;
+#endif
+#ifdef THROUGHPUT
+	ticks st, et;
+#endif
 
 	int NUM_SAMPLES_PER_THREAD = NUM_SAMPLES / CUR_NUM_THREADS;
 	pthread_barrier_wait(&barrier);
 #ifdef THROUGHPUT
-	start_tick = getticks();
+	st = getticks();
 #endif
 	for (int i = 0; i < NUM_SAMPLES_PER_THREAD; i++)
 	{
@@ -235,9 +248,9 @@ void *workermultiple_handler(void * in) {
 #endif
 	}
 #ifdef THROUGHPUT
-	end_tick = getticks();
+	et = getticks();
 	pthread_mutex_lock(&lock);
-	ticks diff_tick = end_tick - start_tick;
+	ticks diff_tick = et - st;
 	double elapsed = ((diff_tick*1E-9))/clockFreq;
 	dequeuethroughput += ((NUM_SAMPLES_PER_THREAD)/elapsed);
 	pthread_mutex_unlock(&lock);
@@ -258,13 +271,17 @@ void *enqueuemultiple_handler(void * in)
 
 	pthread_setaffinity_np(pthread_self(), sizeof(set), &set);
 
-	ticks start_tick = (ticks)0;
-	ticks end_tick = (ticks)0;
+#ifdef LATENCY
+	ticks start_tick, end_tick;
+#endif
+#ifdef THROUGHPUT
+	ticks st, et;
+#endif
 
 	int NUM_SAMPLES_PER_THREAD = NUM_SAMPLES / CUR_NUM_THREADS;
 	pthread_barrier_wait(&barrier);
 #ifdef THROUGHPUT
-	start_tick = getticks();
+	st = getticks();
 #endif
 	for (int i = 0; i < NUM_SAMPLES_PER_THREAD; i++)
 	{
@@ -283,9 +300,9 @@ void *enqueuemultiple_handler(void * in)
 
 	}
 #ifdef THROUGHPUT
-	end_tick = getticks();
+	et = getticks();
 	pthread_mutex_lock(&lock);
-	ticks diff_tick = end_tick - start_tick;
+	ticks diff_tick = et - st;
 	double elapsed = ((diff_tick*1E-9))/clockFreq;
 	enqueuethroughput += ((NUM_SAMPLES_PER_THREAD)/elapsed);
 	pthread_mutex_unlock(&lock);
@@ -299,13 +316,17 @@ void *ck_worker_handler(void *arguments) {
 	struct entry entry;
 	ck_ring_buffer_t *buf = args->buf;
 	ck_ring_t *ring = args->ring;
-	ticks start_tick = (ticks)0;
-	ticks end_tick = (ticks)0;
+#ifdef LATENCY
+	ticks start_tick, end_tick;
+#endif
+#ifdef THROUGHPUT
+	ticks st, et;
+#endif
 
 	int NUM_SAMPLES_PER_THREAD = NUM_SAMPLES / CUR_NUM_THREADS;
 	pthread_barrier_wait(&barrier);
 #ifdef THROUGHPUT
-	start_tick = getticks();
+	st = getticks();
 #endif
 	for (int i = 0; i < NUM_SAMPLES_PER_THREAD; i++)
 	{
@@ -325,9 +346,9 @@ void *ck_worker_handler(void *arguments) {
 
 	}
 #ifdef THROUGHPUT
-	end_tick = getticks();
+	et = getticks();
 	pthread_mutex_lock(&lock);
-	ticks diff_tick = end_tick - start_tick;
+	ticks diff_tick = et - st;
 	double elapsed = ((diff_tick*1E-9))/clockFreq;
 	dequeuethroughput += ((NUM_SAMPLES_PER_THREAD)/elapsed);
 	pthread_mutex_unlock(&lock);
@@ -339,13 +360,17 @@ void *ck_enqueue_handler(void *arguments) {
 	struct arg_struct *args = (struct arg_struct *) arguments;
 	ck_ring_buffer_t *buf = args->buf;
 	ck_ring_t *ring = args->ring;
-	ticks start_tick = (ticks)0;
-	ticks end_tick = (ticks)0;
+#ifdef LATENCY
+	ticks start_tick, end_tick;
+#endif
+#ifdef THROUGHPUT
+	ticks st, et;
+#endif
 	struct entry entry = { 0, 0 };
 	int NUM_SAMPLES_PER_THREAD = NUM_SAMPLES / CUR_NUM_THREADS;
 	pthread_barrier_wait(&barrier);
 #ifdef THROUGHPUT
-	start_tick = getticks();
+	st = getticks();
 #endif
 	for (int i = 0; i < NUM_SAMPLES_PER_THREAD; i++)
 	{
@@ -363,9 +388,9 @@ void *ck_enqueue_handler(void *arguments) {
 #endif
 	}
 #ifdef THROUGHPUT
-	end_tick = getticks();
+	et = getticks();
 	pthread_mutex_lock(&lock);
-	ticks diff_tick = end_tick - start_tick;
+	ticks diff_tick = et - st;
 	double elapsed = ((diff_tick*1E-9))/clockFreq;
 	enqueuethroughput += ((NUM_SAMPLES_PER_THREAD)/elapsed);
 	pthread_mutex_unlock(&lock);
@@ -375,12 +400,17 @@ void *ck_enqueue_handler(void *arguments) {
 
 void *basicenqueue_handler(void *_queue)
 {
-	ticks start_tick,end_tick;
+#ifdef LATENCY
+	ticks start_tick, end_tick;
+#endif
+#ifdef THROUGHPUT
+	ticks st, et;
+#endif
 
 	int NUM_SAMPLES_PER_THREAD = NUM_SAMPLES/CUR_NUM_THREADS;
 	pthread_barrier_wait(&barrier);
 #ifdef THROUGHPUT
-	start_tick  = getticks();
+	st  = getticks();
 #endif
 	for (int i=0;i<NUM_SAMPLES_PER_THREAD;i++)
 	{
@@ -397,9 +427,9 @@ void *basicenqueue_handler(void *_queue)
 #endif
 	}
 #ifdef THROUGHPUT
-	end_tick = getticks();
+	et = getticks();
 	pthread_mutex_lock(&lock);
-	ticks diff_tick = end_tick - start_tick;
+	ticks diff_tick = et - st;
 	double elapsed = ((diff_tick*1E-9))/clockFreq;
 	enqueuethroughput += ((NUM_SAMPLES_PER_THREAD)/elapsed);
 	pthread_mutex_unlock(&lock);
@@ -410,12 +440,17 @@ void *basicenqueue_handler(void *_queue)
 
 void *basicworker_handler(void *_queue)
 {
-	ticks start_tick,end_tick;
+#ifdef LATENCY
+	ticks start_tick, end_tick;
+#endif
+#ifdef THROUGHPUT
+	ticks st, et;
+#endif
 
 	int NUM_SAMPLES_PER_THREAD = NUM_SAMPLES/CUR_NUM_THREADS;
 	pthread_barrier_wait(&barrier);
 #ifdef THROUGHPUT
-	start_tick = getticks();
+	st = getticks();
 #endif
 	for (int i=0;i<NUM_SAMPLES_PER_THREAD;i++)
 	{
@@ -432,9 +467,9 @@ void *basicworker_handler(void *_queue)
 #endif
 	}
 #ifdef THROUGHPUT
-	end_tick = getticks();
+	et = getticks();
 	pthread_mutex_lock(&lock);
-	ticks diff_tick = end_tick - start_tick;
+	ticks diff_tick = et - st;
 	double elapsed = ((diff_tick*1E-9))/clockFreq;
 	dequeuethroughput += ((NUM_SAMPLES_PER_THREAD)/elapsed);
 	pthread_mutex_unlock(&lock);
