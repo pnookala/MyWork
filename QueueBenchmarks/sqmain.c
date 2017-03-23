@@ -125,12 +125,14 @@ void *worker_handler(void * in) {
 	}
 #ifdef THROUGHPUT
 	end_tick = getticks();
+	pthread_mutex_lock(&lock);
 	ticks diff_tick = end_tick - start_tick;
 	double elapsed = (diff_tick*1E-9)/clockFreq;
 	printf("ticks: %ld, samples: %d\n", diff_tick, NUM_SAMPLES_PER_THREAD);
 	printf("dequeue throughput: %lf\n",((NUM_SAMPLES_PER_THREAD)/elapsed));
 	int throughput = (int)((NUM_SAMPLES_PER_THREAD)/elapsed);
 	__sync_fetch_and_add(&dequeuethroughput, (throughput));
+	pthread_mutex_unlock(&lock);
 #endif
 
 	return 0;
@@ -178,12 +180,14 @@ void *enqueue_handler(void * in)
 	}
 #ifdef THROUGHPUT
 	end_tick = getticks();
+	pthread_mutex_lock(&lock);
 	ticks diff_tick = end_tick - start_tick;
 	double elapsed = ((diff_tick*1E-9))/clockFreq;
 	printf("ticks: %ld, samples: %d\n", diff_tick, NUM_SAMPLES_PER_THREAD);
 	printf("enqueue throughput: %lf\n",((NUM_SAMPLES_PER_THREAD)/elapsed));
 	int throughput = (int)((NUM_SAMPLES_PER_THREAD)/elapsed);
 	__sync_fetch_and_add(&enqueuethroughput, (throughput));
+	pthread_mutex_unlock(&lock);
 #endif
 
 	return 0;
@@ -214,20 +218,23 @@ void *workermultiple_handler(void * in) {
 		DequeueMultiple(queues[my_cpu], my_cpu);
 #ifdef LATENCY
 		end_tick = getticks();
-
+		pthread_mutex_lock(&lock);
 		dequeuetimestamp[numDequeue] = (end_tick-start_tick);
 
 		__sync_fetch_and_add(&numDequeue,1);
+		pthread_mutex_unlock(&lock);
 #endif
 	}
 #ifdef THROUGHPUT
 	end_tick = getticks();
+	pthread_mutex_lock(&lock);
 	ticks diff_tick = end_tick - start_tick;
 	double elapsed = (diff_tick*1E-9)/clockFreq;
 	printf("ticks: %ld, samples: %d\n", diff_tick, NUM_SAMPLES_PER_THREAD);
 	printf("throughput: %lf\n",((NUM_SAMPLES_PER_THREAD)/elapsed));
 	int throughput = (int)((NUM_SAMPLES_PER_THREAD)/elapsed);
 	__sync_fetch_and_add(&dequeuethroughput, (throughput));
+	pthread_mutex_unlock(&lock);
 #endif
 
 	return 0;
@@ -261,20 +268,24 @@ void *enqueuemultiple_handler(void * in)
 		EnqueueMultiple((atom) (i+1), queues[my_cpu], my_cpu);
 #ifdef LATENCY
 		end_tick = getticks();
+		pthread_mutex_lock(&lock);
 		enqueuetimestamp[numEnqueue] = (end_tick-start_tick);
 
 		__sync_fetch_and_add(&numEnqueue,1);
+		pthread_mutex_unlock(&lock);
 #endif
 
 	}
 #ifdef THROUGHPUT
 	end_tick = getticks();
+	pthread_mutex_lock(&lock);
 	ticks diff_tick = end_tick - start_tick;
 	double elapsed = ((diff_tick*1E-9))/clockFreq;
 	printf("ticks: %ld, samples: %d\n", diff_tick, NUM_SAMPLES_PER_THREAD);
 	printf("throughput: %lf\n",((NUM_SAMPLES_PER_THREAD)/elapsed));
 	int throughput = (int)((NUM_SAMPLES_PER_THREAD)/elapsed);
 	__sync_fetch_and_add(&enqueuethroughput, (throughput));
+	pthread_mutex_unlock(&lock);
 #endif
 
 	return 0;
@@ -298,27 +309,28 @@ void *ck_worker_handler(void *arguments) {
 #ifdef LATENCY
 		start_tick = getticks();
 #endif
-		bool ret = false;
-
-		ret = ck_ring_dequeue_mpmc(ring, buf, &entry);
-		printf("Dequeue return: %d\n", ret);
+		ck_ring_dequeue_mpmc(ring, buf, &entry);
 
 #ifdef LATENCY
 		end_tick = getticks();
+		pthread_mutex_lock(&lock);
 		dequeuetimestamp[numDequeue] = (end_tick-start_tick);
 
 		__sync_fetch_and_add(&numDequeue,1);
+		pthread_mutex_unlock(&lock);
 #endif
 
 	}
 #ifdef THROUGHPUT
 	end_tick = getticks();
+	pthread_mutex_lock(&lock);
 	ticks diff_tick = end_tick - start_tick;
 	double elapsed = (diff_tick*1E-9)/clockFreq;
 	printf("ticks: %ld, samples: %d\n", diff_tick, NUM_SAMPLES_PER_THREAD);
 	printf("throughput: %lf\n",((NUM_SAMPLES_PER_THREAD)/elapsed));
 	int throughput = (int)((NUM_SAMPLES_PER_THREAD)/elapsed);
 	__sync_fetch_and_add(&dequeuethroughput, (throughput));
+	pthread_mutex_unlock(&lock);
 #endif
 	return 0;
 }
@@ -340,23 +352,26 @@ void *ck_enqueue_handler(void *arguments) {
 #ifdef LATENCY
 		start_tick = getticks();
 #endif
-		bool ret  = ck_ring_enqueue_mpmc(ring, buf, &entry);
-		printf("Enqueue return: %d\n", ret);
+		ck_ring_enqueue_mpmc(ring, buf, &entry);
 #ifdef LATENCY
 		end_tick = getticks();
+		pthread_mutex_lock(&lock);
 		enqueuetimestamp[numEnqueue] = (end_tick-start_tick);
 
 		__sync_fetch_and_add(&numEnqueue,1);
+		pthread_mutex_unlock(&lock);
 #endif
 	}
 #ifdef THROUGHPUT
 	end_tick = getticks();
+	pthread_mutex_lock(&lock);
 	ticks diff_tick = end_tick - start_tick;
 	double elapsed = ((diff_tick*1E-9))/clockFreq;
 	printf("ticks: %ld, samples: %d\n", diff_tick, NUM_SAMPLES_PER_THREAD);
 	printf("throughput: %lf\n",((NUM_SAMPLES_PER_THREAD)/elapsed));
 	int throughput = (int)((NUM_SAMPLES_PER_THREAD)/elapsed);
 	__sync_fetch_and_add(&enqueuethroughput, (throughput));
+	pthread_mutex_unlock(&lock);
 #endif
 	return 0;
 }
@@ -378,18 +393,22 @@ void *basicenqueue_handler(void *_queue)
 		BasicEnqueue(i);
 #ifdef LATENCY
 		end_tick = getticks();
+		pthread_mutex_lock(&lock);
 		enqueuetimestamp[numEnqueue] = (end_tick-start_tick);
 		__sync_fetch_and_add(&numEnqueue,1);
+		pthread_mutex_unlock(&lock);
 #endif
 	}
 #ifdef THROUGHPUT
 	end_tick = getticks();
+	pthread_mutex_lock(&lock);
 	ticks diff_tick = end_tick - start_tick;
 	double elapsed = ((diff_tick*1E-9))/clockFreq;
 	printf("ticks: %ld, samples: %d\n", diff_tick, NUM_SAMPLES_PER_THREAD);
 	printf("throughput: %lf\n",((NUM_SAMPLES_PER_THREAD)/elapsed));
 	int throughput = (int)((NUM_SAMPLES_PER_THREAD)/elapsed);
 	__sync_fetch_and_add(&enqueuethroughput, (throughput));
+	pthread_mutex_unlock(&lock);
 #endif
 
 	return 0;
@@ -412,18 +431,22 @@ void *basicworker_handler(void *_queue)
 		BasicDequeue();
 #ifdef LATENCY
 		end_tick = getticks();
+		pthread_mutex_lock(&lock);
 		dequeuetimestamp[numDequeue] = (end_tick-start_tick);
 		__sync_fetch_and_add(&numDequeue,1);
+		pthread_mutex_unlock(&lock);
 #endif
 	}
 #ifdef THROUGHPUT
 	end_tick = getticks();
+	pthread_mutex_lock(&lock);
 	ticks diff_tick = end_tick - start_tick;
 	double elapsed = (diff_tick*1E-9)/clockFreq;
 	printf("ticks: %ld, samples: %d\n", diff_tick, NUM_SAMPLES_PER_THREAD);
 	printf("throughput: %lf\n",((NUM_SAMPLES_PER_THREAD)/elapsed));
 	int throughput = (int)((NUM_SAMPLES_PER_THREAD)/elapsed);
 	__sync_fetch_and_add(&dequeuethroughput, (throughput));
+	pthread_mutex_unlock(&lock);
 #endif
 
 	return 0;

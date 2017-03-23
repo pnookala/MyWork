@@ -1,2 +1,0 @@
-QueueType NumThreads NumSamples EnqueueMin DequeueMin EnqueueMax DequeueMax EnqueueAverage DequeueAverage EnqueueMedian DequeueMedian EnqueueMinTime DequeueMinTime EnqueueMaxTime DequeueMaxTime EnqueueAverageTime DequeueAverageTime
-4 1 128000 64 60 140837 40794 78.000000 78.000000 72 83 32.000000 30.000000 70418.500000 20397.000000 39.000000 39.000000
