@@ -601,6 +601,9 @@ void ComputeSummary(int type, int numThreads, FILE* afp, FILE* rfp, int rdtsc_ov
 	fprintf(afp, "NumSamples NumThreads EnqueueThroughput DequeueThroughput\n");
 	fprintf(afp, "%d %d %f %f\n", NUM_SAMPLES, numThreads, enqueuethroughput, dequeuethroughput);
 #endif
+
+	free(numEnqueueTicks);
+	free(numDequeueTicks);
 }
 
 int main(int argc, char **argv) {
@@ -688,6 +691,8 @@ int main(int argc, char **argv) {
 
 		clockFreq = (cycles[1]-cycles[0]) / (microseconds * 1000);
 
+		printf("Clock Freq Obtained: %f\n", clockFreq);
+
 #ifdef CALIBRATE
 	//Calibrate RDTSC
 	ticks start_tick = (ticks)0;
@@ -725,7 +730,6 @@ int main(int argc, char **argv) {
 	fprintf(rfp, "Clock Freq: %f\n", clockFreq);
 #endif
 	fprintf(afp, "Clock Freq: %f\n", clockFreq);
-	printf("Clock Freq Obtained: %f\n", clockFreq);
 
 #endif
 	//Initialization
