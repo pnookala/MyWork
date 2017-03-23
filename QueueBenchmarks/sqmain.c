@@ -836,9 +836,8 @@ int main(int argc, char **argv) {
 	case 4://Multiple Incoming Queues
 		for (int k = 0; k < threadCount; k++)
 		{
-
 			CUR_NUM_THREADS = (threads[k])/2;
-			NUM_QUEUES = (CUR_NUM_THREADS/2);
+			NUM_QUEUES = CUR_NUM_THREADS;
 
 			printf("Number of queues: %d\n", NUM_QUEUES);
 
