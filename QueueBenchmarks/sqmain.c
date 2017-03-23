@@ -602,8 +602,10 @@ void ComputeSummary(int type, int numThreads, FILE* afp, FILE* rfp, int rdtsc_ov
 	fprintf(afp, "%d %d %f %f\n", NUM_SAMPLES, numThreads, enqueuethroughput, dequeuethroughput);
 #endif
 
+#ifdef LATENCY
 	free(numEnqueueTicks);
 	free(numDequeueTicks);
+#endif
 }
 
 int main(int argc, char **argv) {
