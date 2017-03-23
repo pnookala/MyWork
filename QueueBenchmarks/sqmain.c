@@ -53,7 +53,7 @@ volatile int numEnqueueThreadsCreated = 0, numDequeueThreadsCreated = 0;
 pthread_cond_t cond_var = PTHREAD_COND_INITIALIZER;
 pthread_mutex_t cond_var_lock =  PTHREAD_MUTEX_INITIALIZER;
 
-int enqueuethroughput, dequeuethroughput = 0;
+double enqueuethroughput, dequeuethroughput = 0;
 static pthread_barrier_t barrier;
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 
@@ -83,6 +83,21 @@ static __inline__ ticks getticks_old(void) {
 			  : "%rcx", "%rdx");
 
 	return tsc;
+}
+
+static inline unsigned long getticks_phi()
+{
+	unsigned int hi, lo;
+
+	__asm volatile (
+		"xorl %%eax, %%eax nt"
+		"cpuid             nt"
+		"rdtsc             nt"
+		:"=a"(lo), "=d"(hi)
+		:
+		:"%ebx", "%ecx"
+	);
+	return ((unsigned long)hi << 32) | lo;
 }
 
 void *worker_handler(void * in) {
@@ -127,11 +142,8 @@ void *worker_handler(void * in) {
 	end_tick = getticks();
 	pthread_mutex_lock(&lock);
 	ticks diff_tick = end_tick - start_tick;
-	double elapsed = (diff_tick*1E-9)/clockFreq;
-	printf("ticks: %ld, samples: %d\n", diff_tick, NUM_SAMPLES_PER_THREAD);
-	printf("dequeue throughput: %lf\n",((NUM_SAMPLES_PER_THREAD)/elapsed));
-	int throughput = (int)((NUM_SAMPLES_PER_THREAD)/elapsed);
-	__sync_fetch_and_add(&dequeuethroughput, (throughput));
+	double elapsed = ((diff_tick*1E-9))/clockFreq;
+	dequeuethroughput += ((NUM_SAMPLES_PER_THREAD)/elapsed);
 	pthread_mutex_unlock(&lock);
 #endif
 
@@ -183,10 +195,7 @@ void *enqueue_handler(void * in)
 	pthread_mutex_lock(&lock);
 	ticks diff_tick = end_tick - start_tick;
 	double elapsed = ((diff_tick*1E-9))/clockFreq;
-	printf("ticks: %ld, samples: %d\n", diff_tick, NUM_SAMPLES_PER_THREAD);
-	printf("enqueue throughput: %lf\n",((NUM_SAMPLES_PER_THREAD)/elapsed));
-	int throughput = (int)((NUM_SAMPLES_PER_THREAD)/elapsed);
-	__sync_fetch_and_add(&enqueuethroughput, (throughput));
+	enqueuethroughput += ((NUM_SAMPLES_PER_THREAD)/elapsed);
 	pthread_mutex_unlock(&lock);
 #endif
 
@@ -229,11 +238,8 @@ void *workermultiple_handler(void * in) {
 	end_tick = getticks();
 	pthread_mutex_lock(&lock);
 	ticks diff_tick = end_tick - start_tick;
-	double elapsed = (diff_tick*1E-9)/clockFreq;
-	printf("ticks: %ld, samples: %d\n", diff_tick, NUM_SAMPLES_PER_THREAD);
-	printf("throughput: %lf\n",((NUM_SAMPLES_PER_THREAD)/elapsed));
-	int throughput = (int)((NUM_SAMPLES_PER_THREAD)/elapsed);
-	__sync_fetch_and_add(&dequeuethroughput, (throughput));
+	double elapsed = ((diff_tick*1E-9))/clockFreq;
+	dequeuethroughput += ((NUM_SAMPLES_PER_THREAD)/elapsed);
 	pthread_mutex_unlock(&lock);
 #endif
 
@@ -281,10 +287,7 @@ void *enqueuemultiple_handler(void * in)
 	pthread_mutex_lock(&lock);
 	ticks diff_tick = end_tick - start_tick;
 	double elapsed = ((diff_tick*1E-9))/clockFreq;
-	printf("ticks: %ld, samples: %d\n", diff_tick, NUM_SAMPLES_PER_THREAD);
-	printf("throughput: %lf\n",((NUM_SAMPLES_PER_THREAD)/elapsed));
-	int throughput = (int)((NUM_SAMPLES_PER_THREAD)/elapsed);
-	__sync_fetch_and_add(&enqueuethroughput, (throughput));
+	enqueuethroughput += ((NUM_SAMPLES_PER_THREAD)/elapsed);
 	pthread_mutex_unlock(&lock);
 #endif
 
@@ -325,11 +328,8 @@ void *ck_worker_handler(void *arguments) {
 	end_tick = getticks();
 	pthread_mutex_lock(&lock);
 	ticks diff_tick = end_tick - start_tick;
-	double elapsed = (diff_tick*1E-9)/clockFreq;
-	printf("ticks: %ld, samples: %d\n", diff_tick, NUM_SAMPLES_PER_THREAD);
-	printf("throughput: %lf\n",((NUM_SAMPLES_PER_THREAD)/elapsed));
-	int throughput = (int)((NUM_SAMPLES_PER_THREAD)/elapsed);
-	__sync_fetch_and_add(&dequeuethroughput, (throughput));
+	double elapsed = ((diff_tick*1E-9))/clockFreq;
+	dequeuethroughput += ((NUM_SAMPLES_PER_THREAD)/elapsed);
 	pthread_mutex_unlock(&lock);
 #endif
 	return 0;
@@ -367,10 +367,7 @@ void *ck_enqueue_handler(void *arguments) {
 	pthread_mutex_lock(&lock);
 	ticks diff_tick = end_tick - start_tick;
 	double elapsed = ((diff_tick*1E-9))/clockFreq;
-	printf("ticks: %ld, samples: %d\n", diff_tick, NUM_SAMPLES_PER_THREAD);
-	printf("throughput: %lf\n",((NUM_SAMPLES_PER_THREAD)/elapsed));
-	int throughput = (int)((NUM_SAMPLES_PER_THREAD)/elapsed);
-	__sync_fetch_and_add(&enqueuethroughput, (throughput));
+	enqueuethroughput += ((NUM_SAMPLES_PER_THREAD)/elapsed);
 	pthread_mutex_unlock(&lock);
 #endif
 	return 0;
@@ -404,10 +401,7 @@ void *basicenqueue_handler(void *_queue)
 	pthread_mutex_lock(&lock);
 	ticks diff_tick = end_tick - start_tick;
 	double elapsed = ((diff_tick*1E-9))/clockFreq;
-	printf("ticks: %ld, samples: %d\n", diff_tick, NUM_SAMPLES_PER_THREAD);
-	printf("throughput: %lf\n",((NUM_SAMPLES_PER_THREAD)/elapsed));
-	int throughput = (int)((NUM_SAMPLES_PER_THREAD)/elapsed);
-	__sync_fetch_and_add(&enqueuethroughput, (throughput));
+	enqueuethroughput += ((NUM_SAMPLES_PER_THREAD)/elapsed);
 	pthread_mutex_unlock(&lock);
 #endif
 
@@ -441,11 +435,8 @@ void *basicworker_handler(void *_queue)
 	end_tick = getticks();
 	pthread_mutex_lock(&lock);
 	ticks diff_tick = end_tick - start_tick;
-	double elapsed = (diff_tick*1E-9)/clockFreq;
-	printf("ticks: %ld, samples: %d\n", diff_tick, NUM_SAMPLES_PER_THREAD);
-	printf("throughput: %lf\n",((NUM_SAMPLES_PER_THREAD)/elapsed));
-	int throughput = (int)((NUM_SAMPLES_PER_THREAD)/elapsed);
-	__sync_fetch_and_add(&dequeuethroughput, (throughput));
+	double elapsed = ((diff_tick*1E-9))/clockFreq;
+	dequeuethroughput += ((NUM_SAMPLES_PER_THREAD)/elapsed);
 	pthread_mutex_unlock(&lock);
 #endif
 
@@ -571,9 +562,9 @@ void ComputeSummary(int type, int numThreads, FILE* afp, FILE* rfp, int rdtsc_ov
 	fprintf(afp, "%d %d %d %ld %ld %ld %ld %lf %lf %ld %ld %lf %lf %lf %lf %lf %lf\n",type, numThreads, NUM_SAMPLES, enqueuetickMin, dequeuetickMin, enqueuetickMax, dequeuetickMax, tickEnqueueAverage, tickDequeueAverage, enqueuetickmedian, dequeuetickmedian, enqueueMinTime, dequeueMinTime, enqueueMaxTime, dequeueMaxTime, enqueueAvgTime, dequeueAvgTime);
 #endif
 #ifdef THROUGHPUT
-	printf("NumSamples:%d NumThreads:%d EnqueueThroughput:%d DequeueThroughput:%d\n", NUM_SAMPLES, numThreads, enqueuethroughput, dequeuethroughput);
+	printf("NumSamples:%d NumThreads:%d EnqueueThroughput:%f DequeueThroughput:%f\n", NUM_SAMPLES, numThreads, enqueuethroughput, dequeuethroughput);
 	fprintf(afp, "NumSamples NumThreads EnqueueThroughput DequeueThroughput\n");
-	fprintf(afp, "%d %d %d %d\n", NUM_SAMPLES, numThreads, enqueuethroughput, dequeuethroughput);
+	fprintf(afp, "%d %d %f %f\n", NUM_SAMPLES, numThreads, enqueuethroughput, dequeuethroughput);
 #endif
 }
 
