@@ -136,9 +136,9 @@ void *worker_handler(void * in) {
 #ifdef LATENCY
 		end_tick = getticks();
 		pthread_mutex_lock(&lock);
-		dequeuetimestamp[numDequeue++] = (end_tick-start_tick);
-
-		//__sync_fetch_and_add(&numDequeue,1);
+		dequeuetimestamp[numDequeue] = (end_tick-start_tick);
+		//printf("%d\n", numDequeue);
+		__sync_fetch_and_add(&numDequeue,1);
 		pthread_mutex_unlock(&lock);
 #endif
 	}
@@ -191,9 +191,9 @@ void *enqueue_handler(void * in)
 #ifdef LATENCY
 		end_tick = getticks();
 		pthread_mutex_lock(&lock);
-		enqueuetimestamp[numEnqueue++] = (end_tick-start_tick);
+		enqueuetimestamp[numEnqueue] = (end_tick-start_tick);
 
-		//__sync_fetch_and_add(&numEnqueue,1);
+		__sync_fetch_and_add(&numEnqueue,1);
 		pthread_mutex_unlock(&lock);
 #endif
 
@@ -499,7 +499,8 @@ void SortTicks(ticks* numTicks)
 //	        }
 //	    }
 
-	qsort(numTicks, NUM_SAMPLES, sizeof(int), cmpfunc);
+	printf("Size:%d, Num size:%ld\n", NUM_SAMPLES, sizeof(numTicks));
+	qsort(numTicks, NUM_SAMPLES, sizeof(*numTicks), cmpfunc);
 }
 
 void ResetCounters() {
@@ -534,8 +535,8 @@ void ComputeSummary(int type, int numThreads, FILE* afp, FILE* rfp, int rdtsc_ov
 		totalDequeueTicks += numDequeueTicks[i];
 	}
 
-	//SortTicks(numEnqueueTicks);
-	//SortTicks(numDequeueTicks);
+	SortTicks(numEnqueueTicks);
+	SortTicks(numDequeueTicks);
 
 	for(int i=0;i<NUM_SAMPLES;i++)
 	{
