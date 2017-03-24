@@ -1,8 +1,0 @@
-NumSamples NumThreads EnqueueThroughput DequeueThroughput
-128000 1 61308539.776669 36714926.238136
-NumSamples NumThreads EnqueueThroughput DequeueThroughput
-128000 1 31304565.171641 38338332.791705
-QueueType NumThreads NumSamples EnqueueMin DequeueMin EnqueueMax DequeueMax EnqueueAverage DequeueAverage EnqueueMedian DequeueMedian EnqueueMinTime DequeueMinTime EnqueueMaxTime DequeueMaxTime EnqueueAverageTime DequeueAverageTime
-1 1 128000 45 60 33839736 44101924 332.000000 427.000000 68 83 22.500000 30.000000 16919868.000000 22050962.000000 166.000000 213.500000
-QueueType NumThreads NumSamples EnqueueMin DequeueMin EnqueueMax DequeueMax EnqueueAverage DequeueAverage EnqueueMedian DequeueMedian EnqueueMinTime DequeueMinTime EnqueueMaxTime DequeueMaxTime EnqueueAverageTime DequeueAverageTime
-1 1 128000 45 60 25925 33033709 66.000000 339.000000 68 83 22.500000 30.000000 12962.500000 16516854.000000 33.000000 169.500000
