@@ -113,7 +113,8 @@ void *worker_handler(void * in) {
 	ticks start_tick, end_tick;
 #endif
 #ifdef THROUGHPUT
-	ticks st, et;
+	//ticks st, et;
+	struct timespec tstart, tend;
 #endif
 
 	int NUM_SAMPLES_PER_THREAD = NUM_SAMPLES / CUR_NUM_THREADS;
@@ -125,7 +126,8 @@ void *worker_handler(void * in) {
 #endif
 
 #ifdef THROUGHPUT
-	st = getticks();
+	//st = getticks();
+	clock_gettime(CLOCK_MONOTONIC, &tstart);
 #endif
 	for (int i = 0; i < NUM_SAMPLES_PER_THREAD; i++)
 	{
@@ -143,11 +145,15 @@ void *worker_handler(void * in) {
 #endif
 	}
 #ifdef THROUGHPUT
-	et = getticks();
+	//et = getticks();
+	clock_gettime(CLOCK_MONOTONIC, &tend);
 	pthread_mutex_lock(&lock);
-	ticks diff_tick = et - st;
-	double elapsed = (diff_tick/clockFreq);
-	dequeuethroughput += ((NUM_SAMPLES_PER_THREAD * 1000000000.0)/elapsed);
+	//ticks diff_tick = et - st;
+	//double elapsed = (diff_tick/clockFreq);
+	double elapsed = ( tend.tv_sec - tstart.tv_sec ) + (( tend.tv_nsec - tstart.tv_nsec )/ 1E9);
+	printf("elapsed time: %lf\n", elapsed);
+	//dequeuethroughput += ((NUM_SAMPLES_PER_THREAD * 1000000000.0)/elapsed);
+	dequeuethroughput += ((NUM_SAMPLES_PER_THREAD*1.0)/elapsed);
 	pthread_mutex_unlock(&lock);
 #endif
 
@@ -170,7 +176,8 @@ void *enqueue_handler(void * in)
 	ticks start_tick, end_tick;
 #endif
 #ifdef THROUGHPUT
-	ticks st, et;
+	//ticks st, et;
+	struct timespec tstart, tend;
 #endif
 
 	int NUM_SAMPLES_PER_THREAD = NUM_SAMPLES / CUR_NUM_THREADS;
@@ -180,7 +187,8 @@ void *enqueue_handler(void * in)
 #endif
 
 #ifdef THROUGHPUT
-	st = getticks();
+	//st = getticks();
+	clock_gettime(CLOCK_MONOTONIC, &tstart);
 #endif
 	for (int i = 0; i < NUM_SAMPLES_PER_THREAD; i++)
 	{
@@ -198,12 +206,20 @@ void *enqueue_handler(void * in)
 #endif
 
 	}
+//#ifdef THROUGHPUT
+//	et = getticks();
+//	pthread_mutex_lock(&lock);
+//	ticks diff_tick = et - st;
+//	double elapsed = (diff_tick/clockFreq);
+//	enqueuethroughput += ((NUM_SAMPLES_PER_THREAD * 1000000000.0)/elapsed);
+//	pthread_mutex_unlock(&lock);
+//#endif
 #ifdef THROUGHPUT
-	et = getticks();
+	clock_gettime(CLOCK_MONOTONIC, &tend);
 	pthread_mutex_lock(&lock);
-	ticks diff_tick = et - st;
-	double elapsed = (diff_tick/clockFreq);
-	enqueuethroughput += ((NUM_SAMPLES_PER_THREAD * 1000000000.0)/elapsed);
+	double elapsed = ( tend.tv_sec - tstart.tv_sec ) + (( tend.tv_nsec - tstart.tv_nsec )/ 1E9);
+	printf("elapsed time: %lf\n", elapsed);
+	enqueuethroughput += ((NUM_SAMPLES_PER_THREAD*1.0)/elapsed);
 	pthread_mutex_unlock(&lock);
 #endif
 
