@@ -623,7 +623,9 @@ void ComputeSummary(int type, int numThreads, FILE* afp, FILE* rfp, int rdtsc_ov
 #endif
 #ifdef THROUGHPUT
 	printf("NumSamples:%d NumThreads:%d EnqueueThroughput:%f DequeueThroughput:%f\n", NUM_SAMPLES, numThreads, enqueuethroughput, dequeuethroughput);
+#ifdef TITLE
 	fprintf(afp, "NumSamples NumThreads EnqueueThroughput DequeueThroughput\n");
+#endif
 	fprintf(afp, "%d %d %f %f\n", NUM_SAMPLES, numThreads, enqueuethroughput, dequeuethroughput);
 #endif
 
@@ -748,6 +750,7 @@ int main(int argc, char **argv) {
 	//rdtsc_overhead_ticks = (totalTicks/NUM_SAMPLES);
 	rdtsc_overhead_ticks = minRdtscTicks;
 	printf("RDTSC time: %d\n", rdtsc_overhead_ticks);
+#ifdef TITLE
 #ifdef RAW
 	fprintf(rfp, "RDTSC time: %d\n", rdtsc_overhead_ticks);
 #endif
@@ -758,6 +761,7 @@ int main(int argc, char **argv) {
 #endif
 	fprintf(afp, "Clock Freq: %f\n", clockFreq);
 
+#endif
 #endif
 	//Initialization
 	enqueuetimestamp = (ticks *)malloc(sizeof(ticks)*NUM_SAMPLES);
@@ -772,13 +776,17 @@ int main(int argc, char **argv) {
 	//	if(rfp == NULL || afp == NULL)
 	//		exit(-1);
 #ifdef RAW
+#ifdef TITLE
 	fprintf(rfp, "QueueType NumSamples EnqueueCycles DequeueCycles NumThreads EnqueueTime(ns) DequeueTime(ns)\n");
+#endif
 #endif
 #ifdef VERBOSE
 	printf("QueueType NumSamples EnqueueCycles DequeueCycles NumThreads EnqueueTime(ns) DequeueTime(ns)\n");
 #endif
 #ifdef LATENCY
+#ifdef TITLE
 	fprintf(afp, "QueueType NumThreads NumSamples EnqueueMin DequeueMin EnqueueMax DequeueMax EnqueueAverage DequeueAverage EnqueueMedian DequeueMedian EnqueueMinTime DequeueMinTime EnqueueMaxTime DequeueMaxTime EnqueueAverageTime DequeueAverageTime\n");
+#endif
 #endif
 
 	//Execute benchmarks for various types of queues
