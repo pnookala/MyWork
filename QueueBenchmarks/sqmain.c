@@ -499,7 +499,7 @@ void SortTicks(ticks* numTicks)
 //	        }
 //	    }
 
-	printf("Size:%d, Num size:%ld\n", NUM_SAMPLES, sizeof(numTicks));
+	//printf("Size:%d, Num size:%ld\n", NUM_SAMPLES, sizeof(numTicks));
 	qsort(numTicks, NUM_SAMPLES, sizeof(*numTicks), cmpfunc);
 }
 
