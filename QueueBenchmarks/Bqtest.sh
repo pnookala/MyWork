@@ -17,8 +17,9 @@ make clean all
 ./sqmain 3 456,768,912,1024 BQLatencyRaw2 BQLatencySummary
 
 make clean thwithtitle
-./sqmain 3 2,4,6,8,12,16 BQLatencyRaw2 BQThroughputSummary
+./sqmain 3 2 BQLatencyRaw2 BQThroughputSummary
 make clean th
+./sqmain 3 4,6,8,12,16 BQLatencyRaw2 BQThroughputSummary
 ./sqmain 3 24,32,48 BQLatencyRaw2 BQThroughputSummary
 ./sqmain 3 96,114,192,228,384 BQLatencyRaw2 BQThroughputSummary
 ./sqmain 3 456,768,912,1024 BQLatencyRaw2 BQThroughputSummary

@@ -17,8 +17,9 @@ make clean all
 ./sqmain 1 456,768,912,1024 SQueueLatencyRaw2 SQueueLatencySummary
 
 make clean thwithtitle
-./sqmain 1 2,4,6,8,12,16 SQueueLatencyRaw2 SQueueThroughputSummary
+./sqmain 1 2 SQueueLatencyRaw2 SQueueThroughputSummary
 make clean th
+./sqmain 1 2 4,6,8,12,16 SQueueLatencyRaw2 SQueueThroughputSummary
 ./sqmain 1 24,32,48 SQueueLatencyRaw2 SQueueThroughputSummary
 ./sqmain 1 96,114,192,228,384 SQueueLatencyRaw2 SQueueThroughputSummary
 ./sqmain 1 456,768,912,1024 SQueueLatencyRaw2 SQueueThroughputSummary

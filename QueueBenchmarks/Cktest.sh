@@ -17,8 +17,9 @@ make clean all
 ./sqmain 2 456,768,912,1024 CKLatencyRaw2 CKLatencySummary
 
 make clean thwithtitle
-./sqmain 2 2,4,6,8,12,16 CKLatencyRaw2 CKThroughputSummary
+./sqmain 2 2 CKLatencyRaw2 CKThroughputSummary
 make clean th
+./sqmain 2 4,6,8,12,16 CKLatencyRaw2 CKThroughputSummary
 ./sqmain 2 24,32,48 CKLatencyRaw2 CKThroughputSummary
 ./sqmain 2 96,114,192,228,384 CKLatencyRaw2 CKThroughputSummary
 ./sqmain 2 456,768,912,1024 CKLatencyRaw2 CKThroughputSummary

@@ -17,8 +17,9 @@ make clean all
 ./sqmain 4 456,768,912,1024 MSQLatencyRaw2 MSQLatencySummary
 
 make clean thwithtitle
-./sqmain 4 2,4,6,8,12,16 MSQLatencyRaw2 MSQThroughputSummary
+./sqmain 4 2 MSQLatencyRaw2 MSQThroughputSummary
 make clean th
+./sqmain 4 4,6,8,12,16 MSQLatencyRaw2 MSQThroughputSummary
 ./sqmain 4 24,32,48 MSQLatencyRaw2 MSQThroughputSummary
 ./sqmain 4 96,114,192,228,384 MSQLatencyRaw2 MSQThroughputSummary
 ./sqmain 4 456,768,912,1024 MSQLatencyRaw2 MSQThroughputSummary
