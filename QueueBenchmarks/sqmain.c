@@ -21,6 +21,19 @@
 #include <time.h>
 #include "squeuemultiple.h"
 #include <sys/time.h>
+#include <urcu.h>		/* RCU flavor */
+#include <urcu/rculfqueue.h>	/* RCU Lock-free queue */
+#include <urcu/compiler.h>	/* For CAA_ARRAY_SIZE */
+
+
+/*
+ * Nodes populated into the queue.
+ */
+struct mynode {
+	int value;			/* Node content */
+	struct cds_lfq_node_rcu node;	/* Chaining in queue */
+	struct rcu_head rcu_head;	/* For call_rcu() */
+};
 
 struct entry {
 	int tid;
@@ -57,6 +70,16 @@ double enqueuethroughput, dequeuethroughput = 0;
 static pthread_barrier_t barrier;
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 
+struct cds_lfq_queue_rcu myqueue;	/* Queue */
+
+static
+void free_node(struct rcu_head *head)
+{
+	struct mynode *node = caa_container_of(head, struct mynode, rcu_head);
+
+	free(node);
+}
+
 //An alternative way is to use rdtscp which will wait until all previous instructions have been executed before reading the counter; might be problematic on multi-core machines
 static __inline__ ticks getticks(void) {
 	ticks tsc;
@@ -90,12 +113,12 @@ static inline unsigned long getticks_phi()
 	unsigned int hi, lo;
 
 	__asm volatile (
-		"xorl %%eax, %%eax nt"
-		"cpuid             nt"
-		"rdtsc             nt"
-		:"=a"(lo), "=d"(hi)
-		:
-		:"%ebx", "%ecx"
+			"xorl %%eax, %%eax nt"
+			"cpuid             nt"
+			"rdtsc             nt"
+			:"=a"(lo), "=d"(hi)
+			 :
+			 :"%ebx", "%ecx"
 	);
 	return ((unsigned long)hi << 32) | lo;
 }
@@ -206,14 +229,14 @@ void *enqueue_handler(void * in)
 #endif
 
 	}
-//#ifdef THROUGHPUT
-//	et = getticks();
-//	pthread_mutex_lock(&lock);
-//	ticks diff_tick = et - st;
-//	double elapsed = (diff_tick/clockFreq);
-//	enqueuethroughput += ((NUM_SAMPLES_PER_THREAD * 1000000000.0)/elapsed);
-//	pthread_mutex_unlock(&lock);
-//#endif
+	//#ifdef THROUGHPUT
+	//	et = getticks();
+	//	pthread_mutex_lock(&lock);
+	//	ticks diff_tick = et - st;
+	//	double elapsed = (diff_tick/clockFreq);
+	//	enqueuethroughput += ((NUM_SAMPLES_PER_THREAD * 1000000000.0)/elapsed);
+	//	pthread_mutex_unlock(&lock);
+	//#endif
 #ifdef THROUGHPUT
 	clock_gettime(CLOCK_MONOTONIC, &tend);
 	pthread_mutex_lock(&lock);
@@ -494,26 +517,142 @@ void *basicworker_handler(void *_queue)
 	return 0;
 }
 
+void *rculfenqueue_handler()
+{
+#ifdef LATENCY
+	ticks start_tick, end_tick;
+#endif
+#ifdef THROUGHPUT
+	ticks st, et;
+#endif
+
+	int NUM_SAMPLES_PER_THREAD = NUM_SAMPLES/CUR_NUM_THREADS;
+	pthread_barrier_wait(&barrier);
+#ifdef THROUGHPUT
+	st = getticks();
+#endif
+	for (int i=0;i<NUM_SAMPLES_PER_THREAD;i++)
+	{
+		struct mynode *node;
+#ifdef LATENCY
+		start_tick = getticks();
+#endif
+		node = malloc(sizeof(*node));
+
+		cds_lfq_node_init_rcu(&node->node);
+		node->value = i;
+		/*
+		 * Both enqueue and dequeue need to be called within RCU
+		 * read-side critical section.
+		 */
+		rcu_read_lock();
+		cds_lfq_enqueue_rcu(&myqueue, &node->node);
+		rcu_read_unlock();
+#ifdef LATENCY
+		end_tick = getticks();
+		pthread_mutex_lock(&lock);
+		enqueuetimestamp[numEnqueue] = (end_tick-start_tick);
+		__sync_fetch_and_add(&numEnqueue,1);
+		pthread_mutex_unlock(&lock);
+#endif
+	}
+#ifdef THROUGHPUT
+	et = getticks();
+	pthread_mutex_lock(&lock);
+	ticks diff_tick = et - st;
+	double elapsed = (diff_tick/clockFreq);
+	enqueuethroughput += ((NUM_SAMPLES_PER_THREAD * 1000000000.0)/elapsed);
+	pthread_mutex_unlock(&lock);
+#endif
+
+	return 0;
+}
+
+void* rculfdequeue_handler()
+{
+#ifdef LATENCY
+	ticks start_tick, end_tick;
+#endif
+#ifdef THROUGHPUT
+	ticks st, et;
+#endif
+
+	int NUM_SAMPLES_PER_THREAD = NUM_SAMPLES/CUR_NUM_THREADS;
+	pthread_barrier_wait(&barrier);
+#ifdef THROUGHPUT
+	st = getticks();
+#endif
+	for (int i=0;i<NUM_SAMPLES_PER_THREAD;i++)
+	{
+		/*
+		 * Dequeue each node from the queue. Those will be dequeued from
+		 * the oldest (first enqueued) to the newest (last enqueued).
+		 */
+		struct cds_lfq_node_rcu *qnode;
+		struct mynode *node;
+
+#ifdef LATENCY
+		start_tick = getticks();
+#endif
+		/*
+		 * Both enqueue and dequeue need to be called within RCU
+		 * read-side critical section.
+		 */
+		rcu_read_lock();
+		qnode = cds_lfq_dequeue_rcu(&myqueue);
+		rcu_read_unlock();
+
+#ifdef LATENCY
+		end_tick = getticks();
+		pthread_mutex_lock(&lock);
+		dequeuetimestamp[numDequeue++] = (end_tick-start_tick);
+		//__sync_fetch_and_add(&numDequeue,1);
+		pthread_mutex_unlock(&lock);
+#endif
+		//			if (!qnode) {
+		//				break;	/* Queue is empty. */
+		//			}
+
+		/* Getting the container structure from the node */
+		node = caa_container_of(qnode, struct mynode, node);
+#ifdef VERBOSE
+		printf(" %d", node->value);
+#endif
+		call_rcu(&node->rcu_head, free_node);
+	}
+#ifdef THROUGHPUT
+	et = getticks();
+	pthread_mutex_lock(&lock);
+	ticks diff_tick = et - st;
+	double elapsed = (diff_tick/clockFreq);
+	dequeuethroughput += ((NUM_SAMPLES_PER_THREAD * 1000000000.0)/elapsed);
+	pthread_mutex_unlock(&lock);
+#endif
+
+	return 0;
+
+}
+
 int cmpfunc (const void * a, const void * b)
 {
-   return ( *(int*)a - *(int*)b );
+	return ( *(int*)a - *(int*)b );
 }
 
 void SortTicks(ticks* numTicks)
 {
-//	ticks a;
-//	for (int i = 0; i < NUM_SAMPLES; i++)
-//	    {
-//	        for (int j = i + 1; j < NUM_SAMPLES; j++)
-//	        {
-//	            if (numTicks[i] > numTicks[j])
-//	            {
-//	                a =  numTicks[i];
-//	                numTicks[i] = numTicks[j];
-//	                numTicks[j] = a;
-//	            }
-//	        }
-//	    }
+	//	ticks a;
+	//	for (int i = 0; i < NUM_SAMPLES; i++)
+	//	    {
+	//	        for (int j = i + 1; j < NUM_SAMPLES; j++)
+	//	        {
+	//	            if (numTicks[i] > numTicks[j])
+	//	            {
+	//	                a =  numTicks[i];
+	//	                numTicks[i] = numTicks[j];
+	//	                numTicks[j] = a;
+	//	            }
+	//	        }
+	//	    }
 
 	//printf("Size:%d, Num size:%ld\n", NUM_SAMPLES, sizeof(numTicks));
 	qsort(numTicks, NUM_SAMPLES, sizeof(*numTicks), cmpfunc);
@@ -590,15 +729,15 @@ void ComputeSummary(int type, int numThreads, FILE* afp, FILE* rfp, int rdtsc_ov
 
 	ticks enqueuetickmedian = 0, dequeuetickmedian = 0;
 
-		if(NUM_SAMPLES % 2==0) {
-		        // if there is an even number of elements, return mean of the two elements in the middle
-		        enqueuetickmedian = ((numEnqueueTicks[(NUM_SAMPLES/2)] + numEnqueueTicks[(NUM_SAMPLES/2) - 1]) / 2.0);
-		        dequeuetickmedian = ((numDequeueTicks[(NUM_SAMPLES/2)] + numDequeueTicks[(NUM_SAMPLES/2) - 1]) / 2.0);
-		    } else {
-		        // else return the element in the middle
-		        enqueuetickmedian = numEnqueueTicks[(NUM_SAMPLES/2)];
-		        dequeuetickmedian = numDequeueTicks[(NUM_SAMPLES/2)];
-		    }
+	if(NUM_SAMPLES % 2==0) {
+		// if there is an even number of elements, return mean of the two elements in the middle
+		enqueuetickmedian = ((numEnqueueTicks[(NUM_SAMPLES/2)] + numEnqueueTicks[(NUM_SAMPLES/2) - 1]) / 2.0);
+		dequeuetickmedian = ((numDequeueTicks[(NUM_SAMPLES/2)] + numDequeueTicks[(NUM_SAMPLES/2) - 1]) / 2.0);
+	} else {
+		// else return the element in the middle
+		enqueuetickmedian = numEnqueueTicks[(NUM_SAMPLES/2)];
+		dequeuetickmedian = numDequeueTicks[(NUM_SAMPLES/2)];
+	}
 
 	printf("Median Enqueue : %ld\n", enqueuetickmedian);
 	printf("Median Dequeue : %ld\n", dequeuetickmedian);
@@ -665,8 +804,11 @@ int main(int argc, char **argv) {
 		case 4:
 			printf("Queue type: Multiple Incoming Queues (NumQueues=NumThreads/2) \n");
 			break;
+		case 5:
+			printf("Queue type: RCU LF Queue\n");
+			break;
 		default:
-			printf("Usage: <QueueType 1-SQueue, 2-CK, 3-Basic Queue, 4-Multiple Incoming Queues>, \nThreads-1,2,4,6,8,12,16,24,32,48,57,96,114,192,228,384,456,768,912,1024, \nRaw data file name: <name>,  \nSummary file name: <name>, \nClock Frequency in GHz: <3.4>\n, Num Samples: <num>\n");
+			printf("Usage: <QueueType 1-SQueue, 2-CK, 3-Basic Queue, 4-Multiple Incoming Queues, 5-RCU LF Queue>, \nThreads-1,2,4,6,8,12,16,24,32,48,57,96,114,192,228,384,456,768,912,1024, \nRaw data file name: <name>,  \nSummary file name: <name>\n");
 			exit(-1);
 			break;
 		}
@@ -700,27 +842,27 @@ int main(int argc, char **argv) {
 	FILE *afp=fopen(fileName2, "a");
 
 	struct timezone tz;
-		struct timeval tvstart, tvstop;
-		unsigned long long int cycles[2];
-		unsigned long microseconds;
+	struct timeval tvstart, tvstop;
+	unsigned long long int cycles[2];
+	unsigned long microseconds;
 
-		memset(&tz, 0, sizeof(tz));
+	memset(&tz, 0, sizeof(tz));
 
-		gettimeofday(&tvstart, &tz);
-		cycles[0] = getticks();
-		gettimeofday(&tvstart, &tz);
+	gettimeofday(&tvstart, &tz);
+	cycles[0] = getticks();
+	gettimeofday(&tvstart, &tz);
 
-		usleep(250000);
+	usleep(250000);
 
-		gettimeofday(&tvstop, &tz);
-		cycles[1] = getticks();
-		gettimeofday(&tvstop, &tz);
+	gettimeofday(&tvstop, &tz);
+	cycles[1] = getticks();
+	gettimeofday(&tvstop, &tz);
 
-		microseconds = ((tvstop.tv_sec-tvstart.tv_sec)*1000000) + (tvstop.tv_usec-tvstart.tv_usec);
+	microseconds = ((tvstop.tv_sec-tvstart.tv_sec)*1000000) + (tvstop.tv_usec-tvstart.tv_usec);
 
-		clockFreq = (cycles[1]-cycles[0]) / (microseconds * 1000);
+	clockFreq = (cycles[1]-cycles[0]) / (microseconds * 1000);
 
-		printf("Clock Freq Obtained: %f\n", clockFreq);
+	printf("Clock Freq Obtained: %f\n", clockFreq);
 
 #ifdef CALIBRATE
 	//Calibrate RDTSC
@@ -968,13 +1110,70 @@ int main(int argc, char **argv) {
 			free(dequeuetimestamp);
 		}
 		break;
+	case 5: //RCU LF Queue
+
+		for (int k = 0; k < threadCount; k++)
+		{
+			CUR_NUM_THREADS = (threads[k])/2;
+			int ret = 0;
+
+			ResetCounters();
+			enqueuetimestamp = (ticks *)malloc(sizeof(ticks)*NUM_SAMPLES);
+			dequeuetimestamp = (ticks *)malloc(sizeof(ticks)*NUM_SAMPLES);
+
+			pthread_t *worker_threads;
+			pthread_t *enqueue_threads;
+
+			worker_threads = (pthread_t *) malloc(sizeof(pthread_t) * CUR_NUM_THREADS);
+			enqueue_threads = (pthread_t *) malloc(sizeof(pthread_t) * CUR_NUM_THREADS);
+
+			/*
+			 * Each thread need using RCU read-side need to be explicitly
+			 * registered.
+			 */
+			rcu_register_thread();
+
+			cds_lfq_init_rcu(&myqueue, call_rcu);
+
+			//Set number of threads that will call the barrier_wait to total of enqueue and dequeue threads
+			pthread_barrier_init(&barrier, NULL, threads[k]);
+
+			for (int i = 0; i < CUR_NUM_THREADS; i++)
+			{
+				pthread_create(&enqueue_threads[i], NULL, rculfenqueue_handler,NULL);
+				pthread_create(&worker_threads[i], NULL, rculfdequeue_handler,NULL);
+			}
+
+			for (int i = 0; i < CUR_NUM_THREADS; i++)
+			{
+				pthread_join(enqueue_threads[i], NULL);
+				pthread_join(worker_threads[i], NULL);
+			}
+
+			ComputeSummary(queueType, CUR_NUM_THREADS, afp, rfp, rdtsc_overhead_ticks);
+
+			free(enqueuetimestamp);
+			free(dequeuetimestamp);
+
+			/*
+			 * Release memory used by the queue.
+			 */
+			ret = cds_lfq_destroy_rcu(&myqueue);
+			if (ret) {
+				printf("Error destroying queue (non-empty)\n");
+			}
+
+			rcu_unregister_thread();
+			return ret;
+		}
+		break;
 	default:
 		break;
 	}
 
-//#ifdef RAW
+	//#ifdef RAW
 	fclose(rfp);
-//#endif
+	//#endif
 
 	fclose(afp);
 	printf("Done!!\n");
