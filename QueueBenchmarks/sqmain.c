@@ -119,7 +119,7 @@ void *worker_handler(void * in) {
 
 	int NUM_SAMPLES_PER_THREAD = NUM_SAMPLES / CUR_NUM_THREADS;
 	//Wait until all threads call the barrier_wait. This is used for getting highest contention with threads
-	//pthread_barrier_wait(&barrier);
+	pthread_barrier_wait(&barrier);
 
 #ifdef VERBOSE
 	printf("Dequeue thread woke up\n");
@@ -181,7 +181,7 @@ void *enqueue_handler(void * in)
 #endif
 
 	int NUM_SAMPLES_PER_THREAD = NUM_SAMPLES / CUR_NUM_THREADS;
-	//pthread_barrier_wait(&barrier);
+	pthread_barrier_wait(&barrier);
 #ifdef VERBOSE
 	printf("Enqueue thread woke up\n");
 #endif
@@ -815,7 +815,7 @@ int main(int argc, char **argv) {
 			pthread_setaffinity_np(pthread_self(), sizeof(set), &set);
 
 			//Set number of threads that will call the barrier_wait to total of enqueue and dequeue threads
-			//pthread_barrier_init(&barrier, NULL, threads[k]);
+			pthread_barrier_init(&barrier, NULL, threads[k]);
 
 			for (int i = 0; i < CUR_NUM_THREADS; i++)
 			{
