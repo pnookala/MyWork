@@ -1,9 +1,9 @@
-CC = gcc -g
+CC = gcc
 CFLAGS = -std=c99 -O2 -Wall -Wpedantic -Werror -DLATENCY -DCALIBRATE #-DTHROUGHPUT #-DVERBOSE #-DCALIBRATE
 RAWFLAGS = -std=c99 -O2 -Wall -Wpedantic -Werror -DLATENCY -DRAW -DCALIBRATE #-DTHROUGHPUT #-DVERBOSE #-DCALIBRATE
 THFLAGS = -std=c99 -O2 -Wall -Wpedantic -Werror -DTHROUGHPUT -DCALIBRATE #-DVERBOSE #-DCALIBRATE
 OBJECTS = squeue.o squeuemultiple.o basicqueue.o sqmain.o
-LDFLAGS = -lrt -lpthread -lurcu-cds -lurcu
+LDFLAGS = -L/usr/local/lib -lrt -lpthread -lurcu-cds -lurcu
 
 all:
 	$(CC) $(CFLAGS) -c squeue.c
