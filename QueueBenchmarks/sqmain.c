@@ -372,7 +372,7 @@ void *ck_worker_handler(void *arguments) {
 #ifdef LATENCY
 		start_tick = getticks();
 #endif
-		ck_ring_dequeue_mpmc(ring, buf, &entry);
+		while(ck_ring_dequeue_mpmc(ring, buf, &entry) == false);
 
 #ifdef LATENCY
 		end_tick = getticks();
