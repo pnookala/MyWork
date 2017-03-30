@@ -676,6 +676,7 @@ void ResetCounters() {
 	numDequeueThreadsCreated = 0;
 	dequeuethroughput = 0;
 	enqueuethroughput = 0;
+	failed_ck_dequeues = 0;
 }
 
 void ComputeSummary(int type, int numThreads, FILE* afp, FILE* rfp, int rdtsc_overhead)
