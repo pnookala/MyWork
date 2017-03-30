@@ -406,6 +406,8 @@ void *ck_worker_handler(void *arguments) {
 	ticks diff_tick = et - st;
 	double elapsed = (diff_tick/clockFreq);
 	dequeuethroughput += ((NUM_SAMPLES_PER_THREAD * 1000000000.0)/elapsed);
+	if(success == 0)
+		printf("Some dequeues failed\n");
 	pthread_mutex_unlock(&lock);
 #endif
 	return 0;
@@ -683,6 +685,7 @@ void ResetCounters() {
 	numDequeueThreadsCreated = 0;
 	dequeuethroughput = 0;
 	enqueuethroughput = 0;
+	failed_ck_dequeues = 0;
 }
 
 void ComputeSummary(int type, int numThreads, FILE* afp, FILE* rfp, int rdtsc_overhead)
