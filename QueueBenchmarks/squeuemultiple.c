@@ -136,10 +136,10 @@ inline atom DequeueMultiple(struct theQueue *q, int queueID)
 //	the defined int values for TRUE and FALSE
 //	instead.
 //--------------------------------------------
-inline int isEmpty()
-{
+//inline int isEmpty()
+//{
 //    return (head == tail);
-}
+//}
 
 //--------------------------------------------
 // Function: isFull()
@@ -149,10 +149,10 @@ inline int isEmpty()
 //	the defined int values for TRUE and FALSE
 //	instead.
 //--------------------------------------------
-inline int isFull()
-{
-    // Queue is full if tail has wrapped around
-    //	to location of the head.  See note in
-    //	Enqueue() function.
+//inline int isFull()
+//{
+//    // Queue is full if tail has wrapped around
+//    //	to location of the head.  See note in
+//    //	Enqueue() function.
 //    return ((tail - MAX_SIZE) >= head);
-}
+//}

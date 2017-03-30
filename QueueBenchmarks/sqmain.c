@@ -14,17 +14,19 @@
 #include <pthread.h>
 #include <sys/types.h>
 #include <sched.h>
+#ifndef PHI
 #include <ck_ring.h>
+#endif
 #include <inttypes.h>
 #include "squeue.h"
 #include "basicqueue.h"
 #include <time.h>
 #include "squeuemultiple.h"
 #include <sys/time.h>
+#ifndef PHI
 #include <urcu.h>		/* RCU flavor */
 #include <urcu/rculfqueue.h>	/* RCU Lock-free queue */
 #include <urcu/compiler.h>	/* For CAA_ARRAY_SIZE */
-
 
 /*
  * Nodes populated into the queue.
@@ -34,12 +36,14 @@ struct mynode {
 	struct cds_lfq_node_rcu node;	/* Chaining in queue */
 	struct rcu_head rcu_head;	/* For call_rcu() */
 };
+#endif
 
 struct entry {
 	int tid;
 	int value;
 };
 
+#ifndef PHI
 struct arg_struct {
 	ck_ring_buffer_t *buf;
 	ck_ring_t *ring;
@@ -47,12 +51,13 @@ struct arg_struct {
 
 int r, size;
 uint64_t s, e, e_a, d_a = 0;
+#endif
 struct timeval sTime, eTime;
 float clockFreq;
 
 typedef long unsigned int ticks;
 #define NUM_THREADS 1
-#define NUM_CPUS 24
+#define NUM_CPUS 1
 
 ticks *enqueuetimestamp, *dequeuetimestamp;
 
@@ -69,7 +74,7 @@ pthread_mutex_t cond_var_lock =  PTHREAD_MUTEX_INITIALIZER;
 double enqueuethroughput, dequeuethroughput = 0;
 static pthread_barrier_t barrier;
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
-
+#ifndef PHI
 struct cds_lfq_queue_rcu myqueue;	/* Queue */
 static int failed_ck_dequeues = 0;
 
@@ -80,6 +85,7 @@ void free_node(struct rcu_head *head)
 
 	free(node);
 }
+#endif
 
 //An alternative way is to use rdtscp which will wait until all previous instructions have been executed before reading the counter; might be problematic on multi-core machines
 static __inline__ ticks getticks(void) {
@@ -351,6 +357,7 @@ void *enqueuemultiple_handler(void * in)
 	return 0;
 }
 
+#ifndef PHI
 void *ck_worker_handler(void *arguments) {
 	struct arg_struct *args = (struct arg_struct *) arguments;
 	struct entry entry;
@@ -445,6 +452,7 @@ void *ck_enqueue_handler(void *arguments) {
 #endif
 	return 0;
 }
+#endif
 
 void *basicenqueue_handler(void *_queue)
 {
@@ -525,7 +533,7 @@ void *basicworker_handler(void *_queue)
 
 	return 0;
 }
-
+#ifndef PHI
 void *rculfenqueue_handler()
 {
 #ifdef LATENCY
@@ -641,6 +649,7 @@ void* rculfdequeue_handler()
 	return 0;
 
 }
+#endif
 
 int cmpfunc (const void * a, const void * b)
 {
@@ -986,6 +995,7 @@ int main(int argc, char **argv) {
 			free(dequeuetimestamp);
 		}
 		break;
+#ifndef PHI
 	case 2: //Concurrency Kit
 		for (int k = 0; k < threadCount; k++)
 		{
@@ -1036,6 +1046,7 @@ int main(int argc, char **argv) {
 			free(dequeuetimestamp);
 		}
 		break;
+#endif
 	case 3: //Basic linux queue
 		for (int k = 0; k < threadCount; k++)
 		{
@@ -1120,6 +1131,7 @@ int main(int argc, char **argv) {
 			free(dequeuetimestamp);
 		}
 		break;
+#ifndef PHI
 	case 5: //RCU LF Queue
 
 		for (int k = 0; k < threadCount; k++)
@@ -1177,6 +1189,7 @@ int main(int argc, char **argv) {
 			return ret;
 		}
 		break;
+#endif
 	default:
 		break;
 	}
