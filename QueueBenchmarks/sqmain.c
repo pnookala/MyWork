@@ -85,7 +85,6 @@ void free_node(struct rcu_head *head)
 
 	free(node);
 }
-#endif
 
 //An alternative way is to use rdtscp which will wait until all previous instructions have been executed before reading the counter; might be problematic on multi-core machines
 static __inline__ ticks getticks(void) {
@@ -100,9 +99,12 @@ static __inline__ ticks getticks(void) {
 
 	return tsc;
 }
+#endif
+
+#ifdef PHI
 
 //get number of ticks, could be problematic on modern CPUs with out of order execution
-static __inline__ ticks getticks_old(void) {
+static __inline__ ticks getticks(void) {
 	ticks tsc;
 	__asm__ __volatile__(
 			"rdtsc;"
@@ -114,6 +116,7 @@ static __inline__ ticks getticks_old(void) {
 
 	return tsc;
 }
+#endif
 
 static inline unsigned long getticks_phi()
 {
