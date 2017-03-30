@@ -71,6 +71,7 @@ static pthread_barrier_t barrier;
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 
 struct cds_lfq_queue_rcu myqueue;	/* Queue */
+static int failed_ck_dequeues = 0;
 
 static
 void free_node(struct rcu_head *head)
@@ -355,6 +356,7 @@ void *ck_worker_handler(void *arguments) {
 	struct entry entry;
 	ck_ring_buffer_t *buf = args->buf;
 	ck_ring_t *ring = args->ring;
+	int success = 1;
 #ifdef LATENCY
 	ticks start_tick, end_tick;
 #endif
@@ -373,13 +375,19 @@ void *ck_worker_handler(void *arguments) {
 		start_tick = getticks();
 #endif
 		if(ck_ring_dequeue_mpmc(ring, buf, &entry) == false)
-			ck_ring_trydequeue_mpmc(ring, buf, &entry);
+			success = ck_ring_trydequeue_mpmc(ring, buf, &entry);
 
 #ifdef LATENCY
 		end_tick = getticks();
 		pthread_mutex_lock(&lock);
-		dequeuetimestamp[numDequeue++] = (end_tick-start_tick);
-
+		if(success == 0)
+		{
+			__sync_fetch_and_add(&failed_ck_dequeues,1);
+			dequeuetimestamp[numDequeue++] = 0;
+			success = 1;
+		}
+		else
+			dequeuetimestamp[numDequeue++] = (end_tick-start_tick);
 		//__sync_fetch_and_add(&numDequeue,1);
 		pthread_mutex_unlock(&lock);
 #endif
@@ -1021,6 +1029,7 @@ int main(int argc, char **argv) {
 				pthread_join(worker_threads[i], NULL);
 			}
 
+			printf("Failed Dequeues: %d\n", failed_ck_dequeues);
 			ComputeSummary(queueType, CUR_NUM_THREADS, afp, rfp, rdtsc_overhead_ticks);
 
 			free(enqueuetimestamp);
