@@ -394,17 +394,12 @@ void *ck_worker_handler(void *arguments) {
 		if(success == 0)
 		{
 			__sync_fetch_and_add(&failed_ck_dequeues,1);
-			//dequeuetimestamp[numDequeue++] = 0;
 			success = 1;
 		}
-		else
-			dequeuetimestamp[numDequeue++] = (end_tick-start_tick);
+
+		dequeuetimestamp[numDequeue++] = (end_tick-start_tick);
 		//__sync_fetch_and_add(&numDequeue,1);
 		pthread_mutex_unlock(&lock);
-#endif
-#ifdef THROUGHPUT
-		if(success == 0)
-			__sync_fetch_and_add(&failed_deq_per_thread,1);
 #endif
 
 	}
@@ -413,7 +408,7 @@ void *ck_worker_handler(void *arguments) {
 	pthread_mutex_lock(&lock);
 	ticks diff_tick = et - st;
 	double elapsed = (diff_tick/clockFreq);
-	dequeuethroughput += (((NUM_SAMPLES_PER_THREAD - failed_deq_per_thread) * 1000000000.0)/elapsed);
+	dequeuethroughput += ((NUM_SAMPLES_PER_THREAD * 1000000000.0)/elapsed);
 	pthread_mutex_unlock(&lock);
 #endif
 	return 0;
