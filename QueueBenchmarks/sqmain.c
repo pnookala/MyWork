@@ -372,6 +372,7 @@ void *ck_worker_handler(void *arguments) {
 #endif
 #ifdef THROUGHPUT
 	ticks st, et;
+	static int failed_deq_per_thread = 0;
 #endif
 
 	int NUM_SAMPLES_PER_THREAD = NUM_SAMPLES / CUR_NUM_THREADS;
@@ -401,6 +402,10 @@ void *ck_worker_handler(void *arguments) {
 		//__sync_fetch_and_add(&numDequeue,1);
 		pthread_mutex_unlock(&lock);
 #endif
+#ifdef THROUGHPUT
+		if(success == 0)
+			__sync_fetch_and_add(&failed_deq_per_thread,1);
+#endif
 
 	}
 #ifdef THROUGHPUT
@@ -408,9 +413,7 @@ void *ck_worker_handler(void *arguments) {
 	pthread_mutex_lock(&lock);
 	ticks diff_tick = et - st;
 	double elapsed = (diff_tick/clockFreq);
-	dequeuethroughput += (((NUM_SAMPLES_PER_THREAD - failed_ck_dequeues) * 1000000000.0)/elapsed);
-	if(success == 0)
-		printf("Some dequeues failed\n");
+	dequeuethroughput += (((NUM_SAMPLES_PER_THREAD - failed_deq_per_thread) * 1000000000.0)/elapsed);
 	pthread_mutex_unlock(&lock);
 #endif
 	return 0;
