@@ -393,7 +393,7 @@ void *ck_worker_handler(void *arguments) {
 		if(success == 0)
 		{
 			__sync_fetch_and_add(&failed_ck_dequeues,1);
-			dequeuetimestamp[numDequeue++] = 0;
+			//dequeuetimestamp[numDequeue++] = 0;
 			success = 1;
 		}
 		else
@@ -408,7 +408,7 @@ void *ck_worker_handler(void *arguments) {
 	pthread_mutex_lock(&lock);
 	ticks diff_tick = et - st;
 	double elapsed = (diff_tick/clockFreq);
-	dequeuethroughput += ((NUM_SAMPLES_PER_THREAD * 1000000000.0)/elapsed);
+	dequeuethroughput += (((NUM_SAMPLES_PER_THREAD - failed_ck_dequeues) * 1000000000.0)/elapsed);
 	if(success == 0)
 		printf("Some dequeues failed\n");
 	pthread_mutex_unlock(&lock);
@@ -1048,6 +1048,7 @@ int main(int argc, char **argv) {
 			}
 
 			printf("Failed Dequeues: %d\n", failed_ck_dequeues);
+			fprintf(afp, "Failed Dequeues: %d\n", failed_ck_dequeues);
 			ComputeSummary(queueType, CUR_NUM_THREADS, afp, rfp, rdtsc_overhead_ticks);
 
 			free(enqueuetimestamp);
