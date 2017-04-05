@@ -1270,8 +1270,7 @@ int main(int argc, char **argv) {
 #ifdef LATENCY
 				deq_start_tick = getticks();
 #endif
-				atom ele = Dequeue();
-				printf("Dequeued %d\n", ele);
+				Dequeue();
 #ifdef LATENCY
 				deq_end_tick = getticks();
 				pthread_mutex_lock(&lock);
