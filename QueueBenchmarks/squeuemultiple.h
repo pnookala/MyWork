@@ -17,7 +17,7 @@ struct theQueue
 {
 	int head;
 	int tail;
-	atom data[MAX_SIZE] __attribute__((aligned (4096)));
+	atom *data __attribute__((aligned (4096)));
 };
 
 struct theQueue **queues;

@@ -11,6 +11,8 @@
 #include <sched.h>
 #include "squeuemultiple.h"
 
+static int QUEUE_SIZE = MAX_SIZE;
+
 static inline void spinlock(volatile int *lock)
 {
     while(!__sync_bool_compare_and_swap(lock, 0, 1))
@@ -31,16 +33,19 @@ static inline void spinunlock(volatile int *lock)
 //--------------------------------------------
 void InitQueues(int numQueues)
 {
+	QUEUE_SIZE = (int)(MAX_SIZE/numQueues);
 #ifdef VERBOSE
 	printf("Number of queues: %d\n", numQueues);
+	printf("Queue Size: %d\n", QUEUE_SIZE);
 #endif
 	queues = (struct theQueue **) malloc(sizeof(struct theQueue) * numQueues);
 	for(int i=0; i<numQueues; i++)
 	{
 		struct theQueue *queue = malloc(sizeof(struct theQueue));
+		queue->data = malloc(sizeof(atom) * QUEUE_SIZE);
 		queue->head = -1;
 		queue->tail = -1;
-		for (int i=0;i<MAX_SIZE;i++)
+		for (int i=0;i<QUEUE_SIZE;i++)
 		    queue->data[i] = 0;
 
 		queues[i] = queue;
@@ -91,7 +96,7 @@ inline int EnqueueMultiple(atom elem, struct theQueue *q, int queueID)
     int cur_tail = __sync_add_and_fetch(&q->tail,1);
 
     // Add the item to the Queue
-    q->data[cur_tail % MAX_SIZE] = elem;
+    q->data[cur_tail % QUEUE_SIZE] = elem;
 #ifdef VERBOSE
     printf("QueueID: %d, Enqueue: %d\n", queueID, elem);
 #endif
@@ -111,7 +116,7 @@ inline atom DequeueMultiple(struct theQueue *q, int queueID)
 	atom elem = 0;
     int cur_head = __sync_add_and_fetch(&q->head,1);
 
-    volatile atom * target = q->data + (cur_head % MAX_SIZE);
+    volatile atom * target = q->data + (cur_head % QUEUE_SIZE);
 
     while (!*target)
     {}
