@@ -408,8 +408,10 @@ void *ck_worker_handler(void *arguments) {
 			__sync_fetch_and_add(&failed_ck_dequeues,1);
 			success = 1;
 		}
-
-		dequeuetimestamp[numDequeue++] = (end_tick-start_tick);
+		else
+		{
+			dequeuetimestamp[numDequeue++] = (end_tick-start_tick);
+		}
 		//__sync_fetch_and_add(&numDequeue,1);
 		pthread_mutex_unlock(&lock);
 #endif
@@ -420,7 +422,7 @@ void *ck_worker_handler(void *arguments) {
 	pthread_mutex_lock(&lock);
 	ticks diff_tick = et - st;
 	double elapsed = (diff_tick/clockFreq);
-	dequeuethroughput += ((NUM_SAMPLES_PER_THREAD * 1000000000.0)/elapsed);
+	dequeuethroughput += (((NUM_SAMPLES_PER_THREAD-failed_ck_dequeues) * 1000000000.0)/elapsed);
 	pthread_mutex_unlock(&lock);
 #endif
 	return 0;
@@ -688,7 +690,7 @@ void SortTicks(ticks* numTicks)
 	//	    }
 
 	//printf("Size:%d, Num size:%ld\n", NUM_SAMPLES, sizeof(numTicks));
-	qsort(numTicks, NUM_SAMPLES, sizeof(*numTicks), cmpfunc);
+	qsort(numTicks, (NUM_SAMPLES-failed_ck_dequeues), sizeof(*numTicks), cmpfunc);
 }
 
 void ResetCounters() {
@@ -721,7 +723,10 @@ void ComputeSummary(int type, int numThreads, FILE* afp, FILE* rfp, int rdtsc_ov
 		//compute the elapsed time per invocation, and subtract the cost of the emtpy loop cost per iteration
 		numEnqueueTicks[i]=enqueuetimestamp[i]-rdtsc_overhead;
 		totalEnqueueTicks += numEnqueueTicks[i];
+	}
 
+	for(int i=0;i<(NUM_SAMPLES-failed_ck_dequeues);i++)
+	{
 		numDequeueTicks[i]= dequeuetimestamp[i]-rdtsc_overhead;
 		totalDequeueTicks += numDequeueTicks[i];
 	}
@@ -732,8 +737,10 @@ void ComputeSummary(int type, int numThreads, FILE* afp, FILE* rfp, int rdtsc_ov
 	for(int i=0;i<NUM_SAMPLES;i++)
 	{
 #ifdef RAW
+		double dequeueTime = 0.0;
 		double enqueueTime = (numEnqueueTicks[i]/clockFreq);
-		double dequeueTime = (numDequeueTicks[i]/clockFreq);
+		if(i < (NUM_SAMPLES-failed_ck_dequeues))
+			dequeueTime = (numDequeueTicks[i]/clockFreq);
 
 		fprintf(rfp, "%d %d %ld %ld %d %lf %lf\n", type, NUM_SAMPLES, (numEnqueueTicks[i]), (numDequeueTicks[i]), CUR_NUM_THREADS, enqueueTime, dequeueTime);
 #ifdef VERBOSE
@@ -747,11 +754,11 @@ void ComputeSummary(int type, int numThreads, FILE* afp, FILE* rfp, int rdtsc_ov
 	enqueuetickMax = numEnqueueTicks[NUM_SAMPLES-1];
 
 	dequeuetickMin = numDequeueTicks[0];
-	dequeuetickMax = numDequeueTicks[NUM_SAMPLES-1];
+	dequeuetickMax = numDequeueTicks[NUM_SAMPLES-1-failed_ck_dequeues];
 
 	//compute average
 	double tickEnqueueAverage = (totalEnqueueTicks/(NUM_SAMPLES));
-	double tickDequeueAverage = (totalDequeueTicks/(NUM_SAMPLES));
+	double tickDequeueAverage = (totalDequeueTicks/(NUM_SAMPLES-failed_ck_dequeues));
 
 	printf("Num threads: %d, Num samples: %d\n", numThreads, NUM_SAMPLES);
 	printf("Enqueue Min: %ld\n", enqueuetickMin);
@@ -768,11 +775,11 @@ void ComputeSummary(int type, int numThreads, FILE* afp, FILE* rfp, int rdtsc_ov
 	if(NUM_SAMPLES % 2==0) {
 		// if there is an even number of elements, return mean of the two elements in the middle
 		enqueuetickmedian = ((numEnqueueTicks[(NUM_SAMPLES/2)] + numEnqueueTicks[(NUM_SAMPLES/2) - 1]) / 2.0);
-		dequeuetickmedian = ((numDequeueTicks[(NUM_SAMPLES/2)] + numDequeueTicks[(NUM_SAMPLES/2) - 1]) / 2.0);
+		dequeuetickmedian = ((numDequeueTicks[((NUM_SAMPLES-failed_ck_dequeues)/2)] + numDequeueTicks[((NUM_SAMPLES-failed_ck_dequeues)/2) - 1]) / 2.0);
 	} else {
 		// else return the element in the middle
 		enqueuetickmedian = numEnqueueTicks[(NUM_SAMPLES/2)];
-		dequeuetickmedian = numDequeueTicks[(NUM_SAMPLES/2)];
+		dequeuetickmedian = numDequeueTicks[((NUM_SAMPLES-failed_ck_dequeues)/2)];
 	}
 
 	printf("Median Enqueue : %ld\n", enqueuetickmedian);
