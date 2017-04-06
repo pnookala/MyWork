@@ -1318,6 +1318,46 @@ int main(int argc, char **argv) {
 //			dequeuethroughput += ((NUM_SAMPLES*1.0)/elapsed);
 //			pthread_mutex_unlock(&lock);
 //#endif
+#ifdef LATENCY
+			ticks deq_start_tick, deq_end_tick;
+#endif
+#ifdef THROUGHPUT
+			//ticks st, et;
+			struct timespec deq_tstart, deq_tend;
+#endif
+
+#ifdef THROUGHPUT
+			//st = getticks();
+			clock_gettime(CLOCK_MONOTONIC, &deq_tstart);
+#endif
+#pragma omp parallel for
+			for (int i = 0; i < NUM_SAMPLES; i++)
+			{
+#ifdef LATENCY
+				deq_start_tick = getticks();
+#endif
+				Dequeue();
+#ifdef LATENCY
+				deq_end_tick = getticks();
+				pthread_mutex_lock(&lock);
+				dequeuetimestamp[numDequeue] = (deq_end_tick-deq_start_tick);
+				//printf("%d\n", numDequeue);
+				__sync_fetch_and_add(&numDequeue,1);
+				pthread_mutex_unlock(&lock);
+#endif
+			}
+#ifdef THROUGHPUT
+			//et = getticks();
+			clock_gettime(CLOCK_MONOTONIC, &deq_tend);
+			pthread_mutex_lock(&lock);
+			//ticks diff_tick = et - st;
+			//double elapsed = (diff_tick/clockFreq);
+			elapsed = ( deq_tend.tv_sec - deq_tstart.tv_sec ) + (( deq_tend.tv_nsec - deq_tstart.tv_nsec )/ 1E9);
+			printf("elapsed time: %lf\n", elapsed);
+			//dequeuethroughput += ((NUM_SAMPLES_PER_THREAD * 1000000000.0)/elapsed);
+			dequeuethroughput += ((NUM_SAMPLES*1.0)/elapsed);
+			pthread_mutex_unlock(&lock);
+#endif
 
 			ComputeSummary(queueType, CUR_NUM_THREADS, afp, rfp, rdtsc_overhead_ticks);
 
