@@ -1,6 +1,6 @@
 CC = gcc
 #CC = icc -mmic -DPHI 	#use this for to make an executable for Phi
-CFLAGS = -std=c99 -O2 -fopenmp -Wall -Wpedantic -DLATENCY -DCALIBRATE -DVERBOSE #-DTHROUGHPUT #-DVERBOSE #-DCALIBRATE
+CFLAGS = -std=c99 -O2 -fopenmp -Wall -Wpedantic -DLATENCY -DCALIBRATE #-DTHROUGHPUT #-DVERBOSE #-DCALIBRATE
 RAWFLAGS = -std=c99 -O2 -fopenmp -Wall -Wpedantic -DLATENCY -DRAW -DCALIBRATE #-DTHROUGHPUT #-DVERBOSE #-DCALIBRATE
 THFLAGS = -std=c99 -O2 -fopenmp -Wall -Wpedantic -DTHROUGHPUT -DCALIBRATE #-DVERBOSE #-DCALIBRATE
 OBJECTS = squeue.o squeuemultiple.o basicqueue.o sqmain.o
