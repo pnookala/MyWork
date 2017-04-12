@@ -222,12 +222,15 @@ void *enqueue_handler(void * in)
 #ifdef LATENCY
 	ticks start_tick, end_tick;
 #endif
+	struct timespec looptime, loopend;
 #ifdef THROUGHPUT
 	//ticks st, et;
 	struct timespec tstart, tend;
+
 #endif
 
-	int NUM_SAMPLES_PER_THREAD = NUM_SAMPLES / CUR_NUM_THREADS;
+	//int NUM_SAMPLES_PER_THREAD = NUM_SAMPLES / CUR_NUM_THREADS;
+	double NUM_SAMPLES_PER_THREAD = 0;
 	pthread_barrier_wait(&barrier);
 #ifdef VERBOSE
 	printf("Enqueue thread woke up\n");
@@ -236,31 +239,51 @@ void *enqueue_handler(void * in)
 #ifdef THROUGHPUT
 	//st = getticks();
 	clock_gettime(CLOCK_MONOTONIC, &tstart);
+	clock_gettime(CLOCK_MONOTONIC, &looptime);
 #endif
-	for (int i = 0; i < NUM_SAMPLES_PER_THREAD; i++)
+	int count = 1;
+	//for (int i = 0; i < NUM_SAMPLES_PER_THREAD; i++)
+	while(1)
 	{
 #ifdef LATENCY
 		start_tick = getticks();
 #endif
-		Enqueue((atom) (i+1));
-#ifdef LATENCY
-		end_tick = getticks();
-		pthread_mutex_lock(&lock);
-		enqueuetimestamp[numEnqueue] = (end_tick-start_tick);
 
-		__sync_fetch_and_add(&numEnqueue,1);
-		pthread_mutex_unlock(&lock);
+		Enqueue((atom)count++);
+		if(count % 1000000 == 0)
+		{
+			clock_gettime(CLOCK_MONOTONIC, &loopend);
+			double diff = ( loopend.tv_sec - looptime.tv_sec );
+			if(diff >= 100)
+			{
+				NUM_SAMPLES_PER_THREAD += count;
+				break;
+			}
+			else
+			{
+				NUM_SAMPLES_PER_THREAD += count;
+				count  = 1;
+			}
+		}
+	}
+#ifdef LATENCY
+	end_tick = getticks();
+	pthread_mutex_lock(&lock);
+	enqueuetimestamp[numEnqueue] = (end_tick-start_tick);
+
+	__sync_fetch_and_add(&numEnqueue,1);
+	pthread_mutex_unlock(&lock);
 #endif
 
-	}
-	//#ifdef THROUGHPUT
-	//	et = getticks();
-	//	pthread_mutex_lock(&lock);
-	//	ticks diff_tick = et - st;
-	//	double elapsed = (diff_tick/clockFreq);
-	//	enqueuethroughput += ((NUM_SAMPLES_PER_THREAD * 1000000000.0)/elapsed);
-	//	pthread_mutex_unlock(&lock);
-	//#endif
+
+//#ifdef THROUGHPUT
+//	et = getticks();
+//	pthread_mutex_lock(&lock);
+//	ticks diff_tick = et - st;
+//	double elapsed = (diff_tick/clockFreq);
+//	enqueuethroughput += ((NUM_SAMPLES_PER_THREAD * 1000000000.0)/elapsed);
+//	pthread_mutex_unlock(&lock);
+//#endif
 #ifdef THROUGHPUT
 	clock_gettime(CLOCK_MONOTONIC, &tend);
 	pthread_mutex_lock(&lock);
@@ -270,7 +293,7 @@ void *enqueue_handler(void * in)
 	pthread_mutex_unlock(&lock);
 #endif
 
-	return 0;
+return 0;
 }
 
 void *workermultiple_handler(void * in) {
@@ -999,10 +1022,10 @@ int main(int argc, char **argv) {
 			dequeuetimestamp = (ticks *)malloc(sizeof(ticks)*NUM_SAMPLES);
 			CUR_NUM_THREADS = (threads[k])/2;
 
-			pthread_t *worker_threads;
+			//pthread_t *worker_threads;
 			pthread_t *enqueue_threads;
 
-			worker_threads = (pthread_t *) malloc(sizeof(pthread_t) * CUR_NUM_THREADS);
+			//worker_threads = (pthread_t *) malloc(sizeof(pthread_t) * CUR_NUM_THREADS);
 			enqueue_threads = (pthread_t *) malloc(sizeof(pthread_t) * CUR_NUM_THREADS);
 
 			cpu_set_t set;
@@ -1018,13 +1041,13 @@ int main(int argc, char **argv) {
 			for (int i = 0; i < CUR_NUM_THREADS; i++)
 			{
 				pthread_create(&enqueue_threads[i], NULL, enqueue_handler,(void*) (unsigned long) (i));
-				pthread_create(&worker_threads[i], NULL, worker_handler,(void*) (unsigned long) (i));
+				//pthread_create(&worker_threads[i], NULL, worker_handler,(void*) (unsigned long) (i));
 			}
 
 			for (int i = 0; i < CUR_NUM_THREADS; i++)
 			{
 				pthread_join(enqueue_threads[i], NULL);
-				pthread_join(worker_threads[i], NULL);
+				//pthread_join(worker_threads[i], NULL);
 			}
 
 			ComputeSummary(queueType, CUR_NUM_THREADS, afp, rfp, rdtsc_overhead_ticks);
@@ -1263,12 +1286,29 @@ int main(int argc, char **argv) {
 			ticks deq_st, deq_et;
 			deq_st = getticks();
 #endif
-#pragma omp parallel for schedule(dynamic,1)
-			for(int i=0; i<NUM_SAMPLES; i++)
+//#pragma omp parallel for schedule(dynamic,1)
+			//			for(int i=0; i<NUM_SAMPLES; i++)
+			//			{
+			//				DequeueFromQ(&incoming);
+			//				sleep(0);
+			//				EnqueueToQ((i+1), &results);
+			//			}
+			int count = 0;
+#pragma omp parallel
+#pragma omp single
 			{
-				DequeueFromQ(&incoming);
-				sleep(0);
-				EnqueueToQ((i+1), &results);
+				while (!isQueueEmpty(&incoming)) {
+					printf("Producer Thread ID:%d\n", omp_get_thread_num());
+					DequeueFromQ(&incoming);
+#pragma omp task
+					{
+						printf("Thread ID:%d\n", omp_get_thread_num());
+						sleep(10);
+						EnqueueToQ((count+1), &results);
+					}
+
+				}
+#pragma omp taskwait
 			}
 #ifdef THROUGHPUT
 			deq_et = getticks();
@@ -1279,7 +1319,7 @@ int main(int argc, char **argv) {
 #endif
 #ifdef THROUGHPUT
 #ifdef TITLE
-	fprintf(afp, "NumSamples NumThreads EnqueueThroughput DequeueThroughput\n");
+			fprintf(afp, "NumSamples NumThreads EnqueueThroughput DequeueThroughput\n");
 #endif
 			printf("%d %d %f %f\n", NUM_SAMPLES, CUR_NUM_THREADS, enqueuethroughput, dequeuethroughput);
 			fprintf(afp, "%d %d %f %f\n", NUM_SAMPLES, CUR_NUM_THREADS, enqueuethroughput, dequeuethroughput);
@@ -1338,39 +1378,39 @@ int main(int argc, char **argv) {
 		break;
 	case 7:
 		for (int k = 0; k < threadCount; k++)
-				{
-					InitQueue();
-					ResetCounters();
-					CUR_NUM_THREADS = threads[k];
-					omp_set_num_threads(CUR_NUM_THREADS);
+		{
+			InitQueue();
+			ResetCounters();
+			CUR_NUM_THREADS = threads[k];
+			omp_set_num_threads(CUR_NUM_THREADS);
 
-		#ifdef THROUGHPUT
-					ticks deq_st, deq_et;
-					deq_st = getticks();
-		#endif
-		#pragma omp parallel for schedule(dynamic,1)
-					for(int i=0; i<NUM_SAMPLES; i++)
-					{
-						pthread_t t;
-						pthread_create(&t, NULL, simplesleephandler,NULL);
-						pthread_join(t, NULL);
-					}
-		#ifdef THROUGHPUT
-					deq_et = getticks();
-					ticks deq_diff_tick = deq_et - deq_st;
-					double deq_elapsed = (deq_diff_tick/clockFreq);
-					//printf("Time elapsed for dequeue: %f\n", deq_elapsed);
-					dequeuethroughput = ((NUM_SAMPLES * 1000000000.0)/deq_elapsed);
-		#endif
+#ifdef THROUGHPUT
+			ticks deq_st, deq_et;
+			deq_st = getticks();
+#endif
+#pragma omp parallel for schedule(dynamic,1)
+			for(int i=0; i<NUM_SAMPLES; i++)
+			{
+				pthread_t t;
+				pthread_create(&t, NULL, simplesleephandler,NULL);
+				pthread_join(t, NULL);
+			}
+#ifdef THROUGHPUT
+			deq_et = getticks();
+			ticks deq_diff_tick = deq_et - deq_st;
+			double deq_elapsed = (deq_diff_tick/clockFreq);
+			//printf("Time elapsed for dequeue: %f\n", deq_elapsed);
+			dequeuethroughput = ((NUM_SAMPLES * 1000000000.0)/deq_elapsed);
+#endif
 #ifdef THROUGHPUT
 #ifdef TITLE
-	fprintf(afp, "NumSamples NumThreads Throughput\n");
+			fprintf(afp, "NumSamples NumThreads Throughput\n");
 #endif
 			printf("%d %d %f\n", NUM_SAMPLES, CUR_NUM_THREADS, dequeuethroughput);
 			fprintf(afp, "%d %d %f\n", NUM_SAMPLES, CUR_NUM_THREADS, dequeuethroughput);
 #endif
-				}
-				break;
+		}
+		break;
 	default:
 		break;
 	}

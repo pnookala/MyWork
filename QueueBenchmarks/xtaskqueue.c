@@ -103,3 +103,32 @@ inline atom DequeueFromQ(struct queue *q)
     return elem;
     
 }
+
+//--------------------------------------------
+// Function: isEmpty()
+// Purpose: Return true if the queue is empty
+// Returns: TRUE if empty, otherwise FALSE
+// Note: C has no boolean data type so we use
+//	the defined int values for TRUE and FALSE
+//	instead.
+//--------------------------------------------
+inline int isQueueEmpty(struct queue *q)
+{
+    return (q->head == q->tail);
+}
+
+//--------------------------------------------
+// Function: isFull()
+// Purpose: Return true if the queue is full.
+// Returns: TRUE if full, otherwise FALSE
+// Note: C has no boolean data type so we use
+//	the defined int values for TRUE and FALSE
+//	instead.
+//--------------------------------------------
+inline int isQueueFull(struct queue *q)
+{
+    // Queue is full if tail has wrapped around
+    //	to location of the head.  See note in
+    //	Enqueue() function.
+    return ((q->tail - MAX_SIZE) >= q->head);
+}

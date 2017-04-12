@@ -22,5 +22,7 @@ void ClearXTaskQueue(struct queue *q);            // Remove all items from the q
 void PrintXTaskQueue(struct queue *q);            // Print all items from the queue
 int EnqueueToQ(atom elem, struct queue *q);      // Enter an item in the queue
 atom DequeueFromQ(struct queue *q);             // Remove an item from the queue
+int isQueueEmpty(struct queue *q);                // Return true if queue is empty
+int isQueueFull(struct queue *q);
 
 #endif // End of queue header
