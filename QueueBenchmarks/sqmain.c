@@ -230,8 +230,8 @@ void *enqueue_handler(void * in)
 #endif
 
 	//int NUM_SAMPLES_PER_THREAD = NUM_SAMPLES / CUR_NUM_THREADS;
-	double NUM_SAMPLES_PER_THREAD = 0;
-	pthread_barrier_wait(&barrier);
+	double NUM_SAMPLES_PER_THREAD = 0.0;
+	//pthread_barrier_wait(&barrier);
 #ifdef VERBOSE
 	printf("Enqueue thread woke up\n");
 #endif
@@ -250,11 +250,13 @@ void *enqueue_handler(void * in)
 #endif
 
 		Enqueue((atom)count++);
-		if(count % 1000000 == 0)
+
+		if(count % 10000 == 0)
 		{
+			//printf("Reached 1000\n");
 			clock_gettime(CLOCK_MONOTONIC, &loopend);
 			double diff = ( loopend.tv_sec - looptime.tv_sec );
-			if(diff >= 100)
+			if(diff >= 10)
 			{
 				NUM_SAMPLES_PER_THREAD += count;
 				break;
@@ -289,6 +291,7 @@ void *enqueue_handler(void * in)
 	pthread_mutex_lock(&lock);
 	double elapsed = ( tend.tv_sec - tstart.tv_sec ) + (( tend.tv_nsec - tstart.tv_nsec )/ 1E9);
 	printf("elapsed time: %lf\n", elapsed);
+	printf("Num tasks run: %f\n", NUM_SAMPLES_PER_THREAD);
 	enqueuethroughput += ((NUM_SAMPLES_PER_THREAD*1.0)/elapsed);
 	pthread_mutex_unlock(&lock);
 #endif
@@ -1036,10 +1039,11 @@ int main(int argc, char **argv) {
 			pthread_setaffinity_np(pthread_self(), sizeof(set), &set);
 
 			//Set number of threads that will call the barrier_wait to total of enqueue and dequeue threads
-			pthread_barrier_init(&barrier, NULL, threads[k]);
+			//pthread_barrier_init(&barrier, NULL, threads[k]);
 
 			for (int i = 0; i < CUR_NUM_THREADS; i++)
 			{
+				printf("Starting threads %d\n", i);
 				pthread_create(&enqueue_threads[i], NULL, enqueue_handler,(void*) (unsigned long) (i));
 				//pthread_create(&worker_threads[i], NULL, worker_handler,(void*) (unsigned long) (i));
 			}
