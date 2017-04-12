@@ -12,7 +12,7 @@
 #include "squeue.h"
 
 struct queue {
-	atom data[MAX_SIZE] __attribute__((aligned (4096)));
+	atom *data __attribute__((aligned (4096)));
 	int head, tail;
 };
 
@@ -22,13 +22,5 @@ void ClearXTaskQueue(struct queue *q);            // Remove all items from the q
 void PrintXTaskQueue(struct queue *q);            // Print all items from the queue
 int EnqueueToQ(atom elem, struct queue *q);      // Enter an item in the queue
 atom DequeueFromQ(struct queue *q);             // Remove an item from the queue
-
-// Define TRUE and FALSE if they have not already been defined
-#ifndef FALSE
-#define FALSE (0)
-#endif
-#ifndef TRUE
-#define TRUE (!FALSE)
-#endif
 
 #endif // End of queue header

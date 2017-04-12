@@ -21,7 +21,8 @@ void InitXTaskQueue(struct queue *q)
 {
     q->head = -1;
     q->tail = -1;
-    
+	q->data = malloc(sizeof(atom) * MAX_SIZE);
+
     for (int i=0;i<MAX_SIZE;i++)
         q->data[i] = 0;
 }

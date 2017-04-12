@@ -1236,8 +1236,7 @@ int main(int argc, char **argv) {
 			struct queue results;
 			InitQueue();
 			ResetCounters();
-			enqueuetimestamp = (ticks *)malloc(sizeof(ticks)*NUM_SAMPLES);
-			dequeuetimestamp = (ticks *)malloc(sizeof(ticks)*NUM_SAMPLES);
+
 			CUR_NUM_THREADS = threads[k];
 			omp_set_num_threads(CUR_NUM_THREADS);
 
