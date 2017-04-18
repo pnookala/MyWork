@@ -61,7 +61,8 @@ float clockFreq;
 typedef long unsigned int ticks;
 #define NUM_THREADS 1
 #define NUM_CPUS 1
-#define NUM_SECONDS 3.0
+#define ENQUEUE_SECONDS 3.0
+#define DEQUEUE_SECONDS 1.0
 
 ticks *enqueuetimestamp, *dequeuetimestamp;
 
@@ -182,7 +183,7 @@ void *worker_handler(void * in) {
 	//for (int i = 0; i < NUM_SAMPLES_PER_THREAD; i++)
 	double diff = 0.0;
 	clock_gettime(CLOCK_MONOTONIC, &looptime);
-	while(diff <= NUM_SECONDS)
+	while(diff <= DEQUEUE_SECONDS)
 	{
 #ifdef LATENCY
 		start_tick = getticks();
@@ -208,7 +209,7 @@ void *worker_handler(void * in) {
 	pthread_mutex_unlock(&lock);
 #endif
 
-		if(count % 100000 == 0)
+		if(count % 10000 == 0)
 		{
 			clock_gettime(CLOCK_MONOTONIC, &loopend);
 			NUM_SAMPLES_PER_THREAD += count;
@@ -268,7 +269,7 @@ void *enqueue_handler(void * in)
 	//for (int i = 0; i < NUM_SAMPLES_PER_THREAD; i++)
 	double diff = 0.0;
 	clock_gettime(CLOCK_MONOTONIC, &looptime);
-	while(diff <= NUM_SECONDS)
+	while(diff <= ENQUEUE_SECONDS)
 	{
 #ifdef LATENCY
 		start_tick = getticks();
@@ -294,7 +295,7 @@ void *enqueue_handler(void * in)
 	pthread_mutex_unlock(&lock);
 #endif
 //#ifdef THROUGHPUT
-		if(count % 100000 == 0)
+		if(count % 10000 == 0)
 		{
 			clock_gettime(CLOCK_MONOTONIC, &loopend);
 			NUM_SAMPLES_PER_THREAD += count;
@@ -349,7 +350,7 @@ void *workermultiple_handler(void * in) {
 	//for (int i = 0; i < NUM_SAMPLES_PER_THREAD; i++)
 	double diff = 0.0;
 	clock_gettime(CLOCK_MONOTONIC, &looptime);
-	while(diff <= NUM_SECONDS)
+	while(diff <= DEQUEUE_SECONDS)
 	{
 #ifdef LATENCY
 		start_tick = getticks();
@@ -433,7 +434,7 @@ void *enqueuemultiple_handler(void * in)
 	//for (int i = 0; i < NUM_SAMPLES_PER_THREAD; i++)
 	double diff = 0.0;
 	clock_gettime(CLOCK_MONOTONIC, &looptime);
-	while(diff <= NUM_SECONDS)
+	while(diff <= ENQUEUE_SECONDS)
 	{
 #ifdef LATENCY
 		start_tick = getticks();
@@ -511,7 +512,7 @@ void *ck_worker_handler(void *arguments) {
 	//for (int i = 0; i < NUM_SAMPLES_PER_THREAD; i++)
 	double diff = 0.0;
 	clock_gettime(CLOCK_MONOTONIC, &looptime);
-	while(diff <= NUM_SECONDS)
+	while(diff <= DEQUEUE_SECONDS)
 	{
 #ifdef LATENCY
 		start_tick = getticks();
@@ -597,7 +598,7 @@ void *ck_enqueue_handler(void *arguments) {
 	//for (int i = 0; i < NUM_SAMPLES_PER_THREAD; i++)
 	double diff = 0.0;
 	clock_gettime(CLOCK_MONOTONIC, &looptime);
-	while(diff <= NUM_SECONDS)
+	while(diff <= ENQUEUE_SECONDS)
 	{
 #ifdef LATENCY
 		start_tick = getticks();
@@ -674,7 +675,7 @@ void *basicenqueue_handler(void *_queue)
 	//for (int i = 0; i < NUM_SAMPLES_PER_THREAD; i++)
 	double diff = 0.0;
 	clock_gettime(CLOCK_MONOTONIC, &looptime);
-	while(diff <= NUM_SECONDS)
+	while(diff <= ENQUEUE_SECONDS)
 	{
 #ifdef LATENCY
 		start_tick = getticks();
@@ -751,7 +752,7 @@ void *basicworker_handler(void *_queue)
 	//for (int i = 0; i < NUM_SAMPLES_PER_THREAD; i++)
 	double diff = 0.0;
 	clock_gettime(CLOCK_MONOTONIC, &looptime);
-	while(diff <= NUM_SECONDS)
+	while(diff <= DEQUEUE_SECONDS)
 	{
 #ifdef LATENCY
 		start_tick = getticks();
@@ -825,7 +826,7 @@ void *rculfenqueue_handler()
 	//for (int i = 0; i < NUM_SAMPLES_PER_THREAD; i++)
 	double diff = 0.0;
 	clock_gettime(CLOCK_MONOTONIC, &looptime);
-	while(diff <= NUM_SECONDS)
+	while(diff <= ENQUEUE_SECONDS)
 	{
 		struct mynode *node;
 #ifdef LATENCY
@@ -914,7 +915,7 @@ void* rculfdequeue_handler()
 	//for (int i = 0; i < NUM_SAMPLES_PER_THREAD; i++)
 	double diff = 0.0;
 	clock_gettime(CLOCK_MONOTONIC, &looptime);
-	while(diff <= NUM_SECONDS)
+	while(diff <= DEQUEUE_SECONDS)
 	{
 		/*
 		 * Dequeue each node from the queue. Those will be dequeued from
