@@ -449,7 +449,6 @@ void *enqueuemultiple_handler(void * in)
 	int loopVar = 0, altCount = 0;
 	if(numEnqueue > 1000000)
 	{
-		printf("numEnqueue %d\n", numEnqueue);
 		for(int y=0;y<(numEnqueue-1)/2;y++)
 		{
 			enqueuetimestamp[y] = enqueuetimestamp[altCount];
@@ -457,7 +456,6 @@ void *enqueuemultiple_handler(void * in)
 			altCount += 2;
 		}
 		numEnqueue = loopVar;
-		printf("loopVar %d\n", numEnqueue);
 	}
 	pthread_mutex_unlock(&lock);
 #endif
@@ -613,7 +611,6 @@ void *ck_enqueue_handler(void *arguments) {
 	int loopVar = 0, altCount = 0;
 	if(numEnqueue > 1000000)
 	{
-		printf("numEnqueue %d\n", numEnqueue);
 		for(int y=0;y<(numEnqueue-1)/2;y++)
 		{
 			enqueuetimestamp[y] = enqueuetimestamp[altCount];
@@ -621,7 +618,6 @@ void *ck_enqueue_handler(void *arguments) {
 			altCount += 2;
 		}
 		numEnqueue = loopVar;
-		printf("loopVar %d\n", numEnqueue);
 	}
 	pthread_mutex_unlock(&lock);
 #endif
@@ -690,7 +686,6 @@ void *basicenqueue_handler(void *_queue)
 	int loopVar = 0, altCount = 0;
 	if(numEnqueue > 1000000)
 	{
-		printf("numEnqueue %d\n", numEnqueue);
 		for(int y=0;y<(numEnqueue-1)/2;y++)
 		{
 			enqueuetimestamp[y] = enqueuetimestamp[altCount];
@@ -698,7 +693,6 @@ void *basicenqueue_handler(void *_queue)
 			altCount += 2;
 		}
 		numEnqueue = loopVar;
-		printf("loopVar %d\n", numEnqueue);
 	}
 	pthread_mutex_unlock(&lock);
 #endif
@@ -853,7 +847,6 @@ void *rculfenqueue_handler()
 	int loopVar = 0, altCount = 0;
 	if(numEnqueue > 1000000)
 	{
-		printf("numEnqueue %d\n", numEnqueue);
 		for(int y=0;y<(numEnqueue-1)/2;y++)
 		{
 			enqueuetimestamp[y] = enqueuetimestamp[altCount];
@@ -861,7 +854,6 @@ void *rculfenqueue_handler()
 			altCount += 2;
 		}
 		numEnqueue = loopVar;
-		printf("loopVar %d\n", numEnqueue);
 	}
 	pthread_mutex_unlock(&lock);
 #endif
@@ -1621,12 +1613,16 @@ int main(int argc, char **argv) {
 #pragma omp single
 			{
 				while (!isQueueEmpty(&incoming)) {
+#ifdef VERBOSE
 					printf("Producer Thread ID:%d\n", omp_get_thread_num());
+#endif
 					DequeueFromQ(&incoming);
 #pragma omp task
 					{
+#ifdef VERBOSE
 						printf("Thread ID:%d\n", omp_get_thread_num());
-						sleep(10);
+#endif
+						sleep(0);
 						EnqueueToQ((count+1), &results);
 					}
 
