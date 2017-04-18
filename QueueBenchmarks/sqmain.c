@@ -1010,6 +1010,8 @@ void ResetCounters() {
 	numDequeueThreadsCreated = 0;
 	dequeuethroughput = 0;
 	enqueuethroughput = 0;
+	DEQUEUE_SAMPLES = 0;
+	ENQUEUE_SAMPLES = 0;
 #ifndef PHI
 	failed_ck_dequeues = 0;
 #endif
