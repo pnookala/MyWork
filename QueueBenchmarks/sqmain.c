@@ -188,6 +188,7 @@ void *worker_handler(void * in) {
 		start_tick = getticks();
 #endif
 		Dequeue();
+		count++;
 #ifdef LATENCY
 	end_tick = getticks();
 	pthread_mutex_lock(&lock);
@@ -280,7 +281,6 @@ void *enqueue_handler(void * in)
 	int loopVar = 0, altCount = 0;
 	if(numEnqueue > 1000000)
 	{
-		printf("numEnqueue %d\n", numEnqueue);
 		for(int y=0;y<(numEnqueue-1)/2;y++)
 		{
 			enqueuetimestamp[y] = enqueuetimestamp[altCount];
@@ -288,7 +288,6 @@ void *enqueue_handler(void * in)
 			altCount += 2;
 		}
 		numEnqueue = loopVar;
-		printf("loopVar %d\n", numEnqueue);
 	}
 	pthread_mutex_unlock(&lock);
 #endif
@@ -352,6 +351,7 @@ void *workermultiple_handler(void * in) {
 		start_tick = getticks();
 #endif
 		DequeueMultiple(queues[my_cpu], my_cpu);
+		count++;
 #ifdef LATENCY
 	end_tick = getticks();
 	pthread_mutex_lock(&lock);
@@ -435,7 +435,7 @@ void *enqueuemultiple_handler(void * in)
 		start_tick = getticks();
 #endif
 
-		EnqueueMultiple((atom) (count+1), queues[my_cpu], my_cpu);
+		EnqueueMultiple((atom) (count++), queues[my_cpu], my_cpu);
 #ifdef LATENCY
 	end_tick = getticks();
 	pthread_mutex_lock(&lock);
@@ -514,7 +514,7 @@ void *ck_worker_handler(void *arguments) {
 #endif
 		if(ck_ring_dequeue_mpmc(ring, buf, &entry) == false)
 			success = ck_ring_trydequeue_mpmc(ring, buf, &entry);
-
+		count++;
 #ifdef LATENCY
 	end_tick = getticks();
 	pthread_mutex_lock(&lock);
@@ -591,6 +591,7 @@ void *ck_enqueue_handler(void *arguments) {
 		start_tick = getticks();
 #endif
 		ck_ring_enqueue_mpmc(ring, buf, &entry);
+		count++;
 #ifdef LATENCY
 	end_tick = getticks();
 	pthread_mutex_lock(&lock);
@@ -744,6 +745,7 @@ void *basicworker_handler(void *_queue)
 		start_tick = getticks();
 #endif
 		BasicDequeue();
+		count++;
 #ifdef LATENCY
 	end_tick = getticks();
 	pthread_mutex_lock(&lock);
@@ -919,6 +921,7 @@ void* rculfdequeue_handler()
 		rcu_read_lock();
 		qnode = cds_lfq_dequeue_rcu(&myqueue);
 		rcu_read_unlock();
+		count++;
 
 #ifdef LATENCY
 	end_tick = getticks();
@@ -1062,8 +1065,6 @@ void ComputeSummary(int type, int numThreads, FILE* afp, FILE* rfp, int rdtsc_ov
 
 	dequeuetickMin = numDequeueTicks[0];
 	dequeuetickMax = numDequeueTicks[numDequeue-1-failed_ck_dequeues];
-
-	//printf("do we get here? %f %d\n", totalEnqueueTicks, USED_SAMPLES);
 
 	//compute average
 	double tickEnqueueAverage = (totalEnqueueTicks/(numEnqueue));
