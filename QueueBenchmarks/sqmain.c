@@ -61,6 +61,7 @@ float clockFreq;
 typedef long unsigned int ticks;
 #define NUM_THREADS 1
 #define NUM_CPUS 1
+#define NUM_SECONDS 1.0
 
 ticks *enqueuetimestamp, *dequeuetimestamp;
 
@@ -68,6 +69,8 @@ static int numEnqueue = 0;
 static int numDequeue = 0;
 static int CUR_NUM_THREADS = 0;
 static int NUM_QUEUES = 1;
+static int ENQUEUE_SAMPLES = 0;
+static int DEQUEUE_SAMPLES = 0;
 
 volatile int numEnqueueThreadsCreated = 0, numDequeueThreadsCreated = 0;
 pthread_cond_t cond_var = PTHREAD_COND_INITIALIZER;
@@ -159,48 +162,68 @@ void *worker_handler(void * in) {
 #ifdef LATENCY
 	ticks start_tick, end_tick;
 #endif
+	struct timespec looptime, loopend;
 #ifdef THROUGHPUT
-	//ticks st, et;
 	struct timespec tstart, tend;
 #endif
 
-	int NUM_SAMPLES_PER_THREAD = NUM_SAMPLES / CUR_NUM_THREADS;
-	//Wait until all threads call the barrier_wait. This is used for getting highest contention with threads
+	//int NUM_SAMPLES_PER_THREAD = NUM_SAMPLES / CUR_NUM_THREADS;
+	double NUM_SAMPLES_PER_THREAD = 0.0;
 	pthread_barrier_wait(&barrier);
-
 #ifdef VERBOSE
-	printf("Dequeue thread woke up\n");
+	printf("Enqueue thread woke up\n");
 #endif
-
 #ifdef THROUGHPUT
 	//st = getticks();
 	clock_gettime(CLOCK_MONOTONIC, &tstart);
+
 #endif
-	for (int i = 0; i < NUM_SAMPLES_PER_THREAD; i++)
+	int count = 1;
+	//for (int i = 0; i < NUM_SAMPLES_PER_THREAD; i++)
+	double diff = 0.0;
+	clock_gettime(CLOCK_MONOTONIC, &looptime);
+	while(diff <= NUM_SECONDS)
 	{
 #ifdef LATENCY
 		start_tick = getticks();
 #endif
 		Dequeue();
 #ifdef LATENCY
-		end_tick = getticks();
-		pthread_mutex_lock(&lock);
-		dequeuetimestamp[numDequeue] = (end_tick-start_tick);
-		//printf("%d\n", numDequeue);
-		__sync_fetch_and_add(&numDequeue,1);
-		pthread_mutex_unlock(&lock);
-#endif
+	end_tick = getticks();
+	pthread_mutex_lock(&lock);
+	dequeuetimestamp[numDequeue] = (end_tick-start_tick);
+	numDequeue++;
+	int loopVar = 0, altCount = 0;
+	if(numDequeue > 1000000)
+	{
+		for(int y=0;y<(numDequeue-1)/2;y++)
+		{
+			dequeuetimestamp[y] = dequeuetimestamp[altCount];
+			loopVar++;
+			altCount += 2;
+		}
+		numDequeue = loopVar;
 	}
+	pthread_mutex_unlock(&lock);
+#endif
+
+		if(count % 100000 == 0)
+		{
+			clock_gettime(CLOCK_MONOTONIC, &loopend);
+			NUM_SAMPLES_PER_THREAD += count;
+			count = 1;
+			diff = ( loopend.tv_sec - looptime.tv_sec );
+		}
+	}
+
 #ifdef THROUGHPUT
-	//et = getticks();
 	clock_gettime(CLOCK_MONOTONIC, &tend);
 	pthread_mutex_lock(&lock);
-	//ticks diff_tick = et - st;
-	//double elapsed = (diff_tick/clockFreq);
 	double elapsed = ( tend.tv_sec - tstart.tv_sec ) + (( tend.tv_nsec - tstart.tv_nsec )/ 1E9);
 	printf("elapsed time: %lf\n", elapsed);
-	//dequeuethroughput += ((NUM_SAMPLES_PER_THREAD * 1000000000.0)/elapsed);
+	printf("Num tasks run: %f\n", NUM_SAMPLES_PER_THREAD);
 	dequeuethroughput += ((NUM_SAMPLES_PER_THREAD*1.0)/elapsed);
+	DEQUEUE_SAMPLES += NUM_SAMPLES_PER_THREAD;
 	pthread_mutex_unlock(&lock);
 #endif
 
@@ -224,68 +247,62 @@ void *enqueue_handler(void * in)
 #endif
 	struct timespec looptime, loopend;
 #ifdef THROUGHPUT
-	//ticks st, et;
 	struct timespec tstart, tend;
-
 #endif
 
 	//int NUM_SAMPLES_PER_THREAD = NUM_SAMPLES / CUR_NUM_THREADS;
 	double NUM_SAMPLES_PER_THREAD = 0.0;
-	//pthread_barrier_wait(&barrier);
+	pthread_barrier_wait(&barrier);
 #ifdef VERBOSE
 	printf("Enqueue thread woke up\n");
 #endif
-
 #ifdef THROUGHPUT
 	//st = getticks();
 	clock_gettime(CLOCK_MONOTONIC, &tstart);
-	clock_gettime(CLOCK_MONOTONIC, &looptime);
+
 #endif
 	int count = 1;
 	//for (int i = 0; i < NUM_SAMPLES_PER_THREAD; i++)
-	while(1)
+	double diff = 0.0;
+	clock_gettime(CLOCK_MONOTONIC, &looptime);
+	while(diff <= NUM_SECONDS)
 	{
 #ifdef LATENCY
 		start_tick = getticks();
 #endif
 
 		Enqueue((atom)count++);
-
-		if(count % 10000 == 0)
-		{
-			//printf("Reached 1000\n");
-			clock_gettime(CLOCK_MONOTONIC, &loopend);
-			double diff = ( loopend.tv_sec - looptime.tv_sec );
-			if(diff >= 10)
-			{
-				NUM_SAMPLES_PER_THREAD += count;
-				break;
-			}
-			else
-			{
-				NUM_SAMPLES_PER_THREAD += count;
-				count  = 1;
-			}
-		}
-	}
 #ifdef LATENCY
 	end_tick = getticks();
 	pthread_mutex_lock(&lock);
 	enqueuetimestamp[numEnqueue] = (end_tick-start_tick);
-
-	__sync_fetch_and_add(&numEnqueue,1);
+	numEnqueue++;
+	int loopVar = 0, altCount = 0;
+	if(numEnqueue > 1000000)
+	{
+		printf("numEnqueue %d\n", numEnqueue);
+		for(int y=0;y<(numEnqueue-1)/2;y++)
+		{
+			enqueuetimestamp[y] = enqueuetimestamp[altCount];
+			loopVar++;
+			altCount += 2;
+		}
+		numEnqueue = loopVar;
+		printf("loopVar %d\n", numEnqueue);
+	}
 	pthread_mutex_unlock(&lock);
 #endif
-
-
 //#ifdef THROUGHPUT
-//	et = getticks();
-//	pthread_mutex_lock(&lock);
-//	ticks diff_tick = et - st;
-//	double elapsed = (diff_tick/clockFreq);
-//	enqueuethroughput += ((NUM_SAMPLES_PER_THREAD * 1000000000.0)/elapsed);
-//	pthread_mutex_unlock(&lock);
+		if(count % 100000 == 0)
+		{
+			clock_gettime(CLOCK_MONOTONIC, &loopend);
+			NUM_SAMPLES_PER_THREAD += count;
+			count = 1;
+			diff = ( loopend.tv_sec - looptime.tv_sec );
+		}
 //#endif
+	}
+
 #ifdef THROUGHPUT
 	clock_gettime(CLOCK_MONOTONIC, &tend);
 	pthread_mutex_lock(&lock);
@@ -293,6 +310,7 @@ void *enqueue_handler(void * in)
 	printf("elapsed time: %lf\n", elapsed);
 	printf("Num tasks run: %f\n", NUM_SAMPLES_PER_THREAD);
 	enqueuethroughput += ((NUM_SAMPLES_PER_THREAD*1.0)/elapsed);
+	ENQUEUE_SAMPLES += NUM_SAMPLES_PER_THREAD;
 	pthread_mutex_unlock(&lock);
 #endif
 
@@ -312,36 +330,64 @@ void *workermultiple_handler(void * in) {
 #ifdef LATENCY
 	ticks start_tick, end_tick;
 #endif
+	struct timespec looptime, loopend;
 #ifdef THROUGHPUT
-	ticks st, et;
+	struct timespec tstart, tend;
 #endif
 
-	int NUM_SAMPLES_PER_THREAD = NUM_SAMPLES / CUR_NUM_THREADS;
+	double NUM_SAMPLES_PER_THREAD = 0.0;
 	pthread_barrier_wait(&barrier);
 #ifdef THROUGHPUT
-	st = getticks();
+	//st = getticks();
+	clock_gettime(CLOCK_MONOTONIC, &tstart);
+
 #endif
-	for (int i = 0; i < NUM_SAMPLES_PER_THREAD; i++)
+	int count = 1;
+	//for (int i = 0; i < NUM_SAMPLES_PER_THREAD; i++)
+	double diff = 0.0;
+	clock_gettime(CLOCK_MONOTONIC, &looptime);
+	while(diff <= NUM_SECONDS)
 	{
 #ifdef LATENCY
 		start_tick = getticks();
 #endif
 		DequeueMultiple(queues[my_cpu], my_cpu);
 #ifdef LATENCY
-		end_tick = getticks();
-		pthread_mutex_lock(&lock);
-		dequeuetimestamp[numDequeue++] = (end_tick-start_tick);
-
-		//__sync_fetch_and_add(&numDequeue,1);
-		pthread_mutex_unlock(&lock);
-#endif
-	}
-#ifdef THROUGHPUT
-	et = getticks();
+	end_tick = getticks();
 	pthread_mutex_lock(&lock);
-	ticks diff_tick = et - st;
-	double elapsed = (diff_tick/clockFreq);
-	dequeuethroughput += ((NUM_SAMPLES_PER_THREAD * 1000000000.0)/elapsed);
+	dequeuetimestamp[numDequeue] = (end_tick-start_tick);
+	numDequeue++;
+	int loopVar = 0, altCount = 0;
+	if(numDequeue > 1000000)
+	{
+		for(int y=0;y<(numDequeue-1)/2;y++)
+		{
+			dequeuetimestamp[y] = dequeuetimestamp[altCount];
+			loopVar++;
+			altCount += 2;
+		}
+		numDequeue = loopVar;
+	}
+	pthread_mutex_unlock(&lock);
+#endif
+
+		if(count % 100000 == 0)
+		{
+			clock_gettime(CLOCK_MONOTONIC, &loopend);
+			NUM_SAMPLES_PER_THREAD += count;
+			count = 1;
+			diff = ( loopend.tv_sec - looptime.tv_sec );
+		}
+	}
+
+#ifdef THROUGHPUT
+	clock_gettime(CLOCK_MONOTONIC, &tend);
+	pthread_mutex_lock(&lock);
+	double elapsed = ( tend.tv_sec - tstart.tv_sec ) + (( tend.tv_nsec - tstart.tv_nsec )/ 1E9);
+	printf("elapsed time: %lf\n", elapsed);
+	printf("Num tasks run: %f\n", NUM_SAMPLES_PER_THREAD);
+	dequeuethroughput += ((NUM_SAMPLES_PER_THREAD*1.0)/elapsed);
+	DEQUEUE_SAMPLES += NUM_SAMPLES_PER_THREAD;
 	pthread_mutex_unlock(&lock);
 #endif
 
@@ -363,37 +409,72 @@ void *enqueuemultiple_handler(void * in)
 #ifdef LATENCY
 	ticks start_tick, end_tick;
 #endif
+	struct timespec looptime, loopend;
 #ifdef THROUGHPUT
-	ticks st, et;
+	struct timespec tstart, tend;
 #endif
 
-	int NUM_SAMPLES_PER_THREAD = NUM_SAMPLES / CUR_NUM_THREADS;
+	//int NUM_SAMPLES_PER_THREAD = NUM_SAMPLES / CUR_NUM_THREADS;
+	double NUM_SAMPLES_PER_THREAD = 0.0;
 	pthread_barrier_wait(&barrier);
-#ifdef THROUGHPUT
-	st = getticks();
+#ifdef VERBOSE
+	printf("Enqueue thread woke up\n");
 #endif
-	for (int i = 0; i < NUM_SAMPLES_PER_THREAD; i++)
+#ifdef THROUGHPUT
+	//st = getticks();
+	clock_gettime(CLOCK_MONOTONIC, &tstart);
+
+#endif
+	int count = 1;
+	//for (int i = 0; i < NUM_SAMPLES_PER_THREAD; i++)
+	double diff = 0.0;
+	clock_gettime(CLOCK_MONOTONIC, &looptime);
+	while(diff <= NUM_SECONDS)
 	{
 #ifdef LATENCY
 		start_tick = getticks();
 #endif
-		EnqueueMultiple((atom) (i+1), queues[my_cpu], my_cpu);
+
+		EnqueueMultiple((atom) (count+1), queues[my_cpu], my_cpu);
 #ifdef LATENCY
-		end_tick = getticks();
-		pthread_mutex_lock(&lock);
-		enqueuetimestamp[numEnqueue++] = (end_tick-start_tick);
-
-		//__sync_fetch_and_add(&numEnqueue,1);
-		pthread_mutex_unlock(&lock);
-#endif
-
-	}
-#ifdef THROUGHPUT
-	et = getticks();
+	end_tick = getticks();
 	pthread_mutex_lock(&lock);
-	ticks diff_tick = et - st;
-	double elapsed = (diff_tick/clockFreq);
-	enqueuethroughput += ((NUM_SAMPLES_PER_THREAD * 1000000000.0)/elapsed);
+	enqueuetimestamp[numEnqueue] = (end_tick-start_tick);
+	numEnqueue++;
+	int loopVar = 0, altCount = 0;
+	if(numEnqueue > 1000000)
+	{
+		printf("numEnqueue %d\n", numEnqueue);
+		for(int y=0;y<(numEnqueue-1)/2;y++)
+		{
+			enqueuetimestamp[y] = enqueuetimestamp[altCount];
+			loopVar++;
+			altCount += 2;
+		}
+		numEnqueue = loopVar;
+		printf("loopVar %d\n", numEnqueue);
+	}
+	pthread_mutex_unlock(&lock);
+#endif
+//#ifdef THROUGHPUT
+		if(count % 100000 == 0)
+		{
+			clock_gettime(CLOCK_MONOTONIC, &loopend);
+			NUM_SAMPLES_PER_THREAD += count;
+			count = 1;
+			diff = ( loopend.tv_sec - looptime.tv_sec );
+		}
+//#endif
+	}
+
+#ifdef THROUGHPUT
+	clock_gettime(CLOCK_MONOTONIC, &tend);
+	pthread_mutex_lock(&lock);
+	double elapsed = ( tend.tv_sec - tstart.tv_sec ) + (( tend.tv_nsec - tstart.tv_nsec )/ 1E9);
+	printf("elapsed time: %lf\n", elapsed);
+	printf("Num tasks run: %f\n", NUM_SAMPLES_PER_THREAD);
+	enqueuethroughput += ((NUM_SAMPLES_PER_THREAD*1.0)/elapsed);
+	ENQUEUE_SAMPLES += NUM_SAMPLES_PER_THREAD;
 	pthread_mutex_unlock(&lock);
 #endif
 
@@ -410,16 +491,23 @@ void *ck_worker_handler(void *arguments) {
 #ifdef LATENCY
 	ticks start_tick, end_tick;
 #endif
+	struct timespec looptime, loopend;
 #ifdef THROUGHPUT
-	ticks st, et;
+	struct timespec tstart, tend;
 #endif
 
-	int NUM_SAMPLES_PER_THREAD = NUM_SAMPLES / CUR_NUM_THREADS;
+	double NUM_SAMPLES_PER_THREAD = 0.0;
 	pthread_barrier_wait(&barrier);
 #ifdef THROUGHPUT
-	st = getticks();
+	//st = getticks();
+	clock_gettime(CLOCK_MONOTONIC, &tstart);
+
 #endif
-	for (int i = 0; i < NUM_SAMPLES_PER_THREAD; i++)
+	int count = 1;
+	//for (int i = 0; i < NUM_SAMPLES_PER_THREAD; i++)
+	double diff = 0.0;
+	clock_gettime(CLOCK_MONOTONIC, &looptime);
+	while(diff <= NUM_SECONDS)
 	{
 #ifdef LATENCY
 		start_tick = getticks();
@@ -428,30 +516,44 @@ void *ck_worker_handler(void *arguments) {
 			success = ck_ring_trydequeue_mpmc(ring, buf, &entry);
 
 #ifdef LATENCY
-		end_tick = getticks();
-		pthread_mutex_lock(&lock);
-		if(success == 0)
-		{
-			__sync_fetch_and_add(&failed_ck_dequeues,1);
-			success = 1;
-		}
-		else
-		{
-			dequeuetimestamp[numDequeue++] = (end_tick-start_tick);
-		}
-		//__sync_fetch_and_add(&numDequeue,1);
-		pthread_mutex_unlock(&lock);
-#endif
-
-	}
-#ifdef THROUGHPUT
-	et = getticks();
+	end_tick = getticks();
 	pthread_mutex_lock(&lock);
-	ticks diff_tick = et - st;
-	double elapsed = (diff_tick/clockFreq);
-	dequeuethroughput += (((NUM_SAMPLES_PER_THREAD-failed_ck_dequeues) * 1000000000.0)/elapsed);
+	dequeuetimestamp[numDequeue] = (end_tick-start_tick);
+	numDequeue++;
+	int loopVar = 0, altCount = 0;
+	if(numDequeue > 1000000)
+	{
+		for(int y=0;y<(numDequeue-1)/2;y++)
+		{
+			dequeuetimestamp[y] = dequeuetimestamp[altCount];
+			loopVar++;
+			altCount += 2;
+		}
+		numDequeue = loopVar;
+	}
 	pthread_mutex_unlock(&lock);
 #endif
+
+		if(count % 100000 == 0)
+		{
+			clock_gettime(CLOCK_MONOTONIC, &loopend);
+			NUM_SAMPLES_PER_THREAD += count;
+			count = 1;
+			diff = ( loopend.tv_sec - looptime.tv_sec );
+		}
+	}
+
+#ifdef THROUGHPUT
+	clock_gettime(CLOCK_MONOTONIC, &tend);
+	pthread_mutex_lock(&lock);
+	double elapsed = ( tend.tv_sec - tstart.tv_sec ) + (( tend.tv_nsec - tstart.tv_nsec )/ 1E9);
+	printf("elapsed time: %lf\n", elapsed);
+	printf("Num tasks run: %f\n", NUM_SAMPLES_PER_THREAD);
+	dequeuethroughput += ((NUM_SAMPLES_PER_THREAD*1.0)/elapsed);
+	DEQUEUE_SAMPLES += NUM_SAMPLES_PER_THREAD;
+	pthread_mutex_unlock(&lock);
+#endif
+
 	return 0;
 }
 
@@ -462,36 +564,72 @@ void *ck_enqueue_handler(void *arguments) {
 #ifdef LATENCY
 	ticks start_tick, end_tick;
 #endif
+	struct timespec looptime, loopend;
 #ifdef THROUGHPUT
-	ticks st, et;
+	struct timespec tstart, tend;
 #endif
+
+	//int NUM_SAMPLES_PER_THREAD = NUM_SAMPLES / CUR_NUM_THREADS;
+	double NUM_SAMPLES_PER_THREAD = 0.0;
 	struct entry entry = { 0, 0 };
-	int NUM_SAMPLES_PER_THREAD = NUM_SAMPLES / CUR_NUM_THREADS;
 	pthread_barrier_wait(&barrier);
-#ifdef THROUGHPUT
-	st = getticks();
+#ifdef VERBOSE
+	printf("Enqueue thread woke up\n");
 #endif
-	for (int i = 0; i < NUM_SAMPLES_PER_THREAD; i++)
+#ifdef THROUGHPUT
+	//st = getticks();
+	clock_gettime(CLOCK_MONOTONIC, &tstart);
+
+#endif
+	int count = 1;
+	//for (int i = 0; i < NUM_SAMPLES_PER_THREAD; i++)
+	double diff = 0.0;
+	clock_gettime(CLOCK_MONOTONIC, &looptime);
+	while(diff <= NUM_SECONDS)
 	{
 #ifdef LATENCY
 		start_tick = getticks();
 #endif
 		ck_ring_enqueue_mpmc(ring, buf, &entry);
 #ifdef LATENCY
-		end_tick = getticks();
-		pthread_mutex_lock(&lock);
-		enqueuetimestamp[numEnqueue++] = (end_tick-start_tick);
-
-		//__sync_fetch_and_add(&numEnqueue,1);
-		pthread_mutex_unlock(&lock);
-#endif
-	}
-#ifdef THROUGHPUT
-	et = getticks();
+	end_tick = getticks();
 	pthread_mutex_lock(&lock);
-	ticks diff_tick = et - st;
-	double elapsed = (diff_tick/clockFreq);
-	enqueuethroughput += ((NUM_SAMPLES_PER_THREAD * 1000000000.0)/elapsed);
+	enqueuetimestamp[numEnqueue] = (end_tick-start_tick);
+	numEnqueue++;
+	int loopVar = 0, altCount = 0;
+	if(numEnqueue > 1000000)
+	{
+		printf("numEnqueue %d\n", numEnqueue);
+		for(int y=0;y<(numEnqueue-1)/2;y++)
+		{
+			enqueuetimestamp[y] = enqueuetimestamp[altCount];
+			loopVar++;
+			altCount += 2;
+		}
+		numEnqueue = loopVar;
+		printf("loopVar %d\n", numEnqueue);
+	}
+	pthread_mutex_unlock(&lock);
+#endif
+//#ifdef THROUGHPUT
+		if(count % 100000 == 0)
+		{
+			clock_gettime(CLOCK_MONOTONIC, &loopend);
+			NUM_SAMPLES_PER_THREAD += count;
+			count = 1;
+			diff = ( loopend.tv_sec - looptime.tv_sec );
+		}
+//#endif
+	}
+
+#ifdef THROUGHPUT
+	clock_gettime(CLOCK_MONOTONIC, &tend);
+	pthread_mutex_lock(&lock);
+	double elapsed = ( tend.tv_sec - tstart.tv_sec ) + (( tend.tv_nsec - tstart.tv_nsec )/ 1E9);
+	printf("elapsed time: %lf\n", elapsed);
+	printf("Num tasks run: %f\n", NUM_SAMPLES_PER_THREAD);
+	enqueuethroughput += ((NUM_SAMPLES_PER_THREAD*1.0)/elapsed);
+	ENQUEUE_SAMPLES += NUM_SAMPLES_PER_THREAD;
 	pthread_mutex_unlock(&lock);
 #endif
 	return 0;
@@ -503,35 +641,72 @@ void *basicenqueue_handler(void *_queue)
 #ifdef LATENCY
 	ticks start_tick, end_tick;
 #endif
+	struct timespec looptime, loopend;
 #ifdef THROUGHPUT
-	ticks st, et;
+	struct timespec tstart, tend;
 #endif
 
-	int NUM_SAMPLES_PER_THREAD = NUM_SAMPLES/CUR_NUM_THREADS;
+	//int NUM_SAMPLES_PER_THREAD = NUM_SAMPLES / CUR_NUM_THREADS;
+	double NUM_SAMPLES_PER_THREAD = 0.0;
 	pthread_barrier_wait(&barrier);
-#ifdef THROUGHPUT
-	st  = getticks();
+#ifdef VERBOSE
+	printf("Enqueue thread woke up\n");
 #endif
-	for (int i=0;i<NUM_SAMPLES_PER_THREAD;i++)
+#ifdef THROUGHPUT
+	//st = getticks();
+	clock_gettime(CLOCK_MONOTONIC, &tstart);
+
+#endif
+	int count = 1;
+	//for (int i = 0; i < NUM_SAMPLES_PER_THREAD; i++)
+	double diff = 0.0;
+	clock_gettime(CLOCK_MONOTONIC, &looptime);
+	while(diff <= NUM_SECONDS)
 	{
 #ifdef LATENCY
 		start_tick = getticks();
 #endif
-		BasicEnqueue(i);
+
+		BasicEnqueue((atom)count++);
 #ifdef LATENCY
-		end_tick = getticks();
-		pthread_mutex_lock(&lock);
-		enqueuetimestamp[numEnqueue++] = (end_tick-start_tick);
-		//__sync_fetch_and_add(&numEnqueue,1);
-		pthread_mutex_unlock(&lock);
-#endif
-	}
-#ifdef THROUGHPUT
-	et = getticks();
+	end_tick = getticks();
 	pthread_mutex_lock(&lock);
-	ticks diff_tick = et - st;
-	double elapsed = (diff_tick/clockFreq);
-	enqueuethroughput += ((NUM_SAMPLES_PER_THREAD * 1000000000.0)/elapsed);
+	enqueuetimestamp[numEnqueue] = (end_tick-start_tick);
+	numEnqueue++;
+	int loopVar = 0, altCount = 0;
+	if(numEnqueue > 1000000)
+	{
+		printf("numEnqueue %d\n", numEnqueue);
+		for(int y=0;y<(numEnqueue-1)/2;y++)
+		{
+			enqueuetimestamp[y] = enqueuetimestamp[altCount];
+			loopVar++;
+			altCount += 2;
+		}
+		numEnqueue = loopVar;
+		printf("loopVar %d\n", numEnqueue);
+	}
+	pthread_mutex_unlock(&lock);
+#endif
+//#ifdef THROUGHPUT
+		if(count % 100000 == 0)
+		{
+			clock_gettime(CLOCK_MONOTONIC, &loopend);
+			NUM_SAMPLES_PER_THREAD += count;
+			count = 1;
+			diff = ( loopend.tv_sec - looptime.tv_sec );
+		}
+//#endif
+	}
+
+#ifdef THROUGHPUT
+	clock_gettime(CLOCK_MONOTONIC, &tend);
+	pthread_mutex_lock(&lock);
+	double elapsed = ( tend.tv_sec - tstart.tv_sec ) + (( tend.tv_nsec - tstart.tv_nsec )/ 1E9);
+	printf("elapsed time: %lf\n", elapsed);
+	printf("Num tasks run: %f\n", NUM_SAMPLES_PER_THREAD);
+	enqueuethroughput += ((NUM_SAMPLES_PER_THREAD*1.0)/elapsed);
+	ENQUEUE_SAMPLES += NUM_SAMPLES_PER_THREAD;
 	pthread_mutex_unlock(&lock);
 #endif
 
@@ -543,35 +718,68 @@ void *basicworker_handler(void *_queue)
 #ifdef LATENCY
 	ticks start_tick, end_tick;
 #endif
+	struct timespec looptime, loopend;
 #ifdef THROUGHPUT
-	ticks st, et;
+	struct timespec tstart, tend;
 #endif
 
-	int NUM_SAMPLES_PER_THREAD = NUM_SAMPLES/CUR_NUM_THREADS;
+	//int NUM_SAMPLES_PER_THREAD = NUM_SAMPLES / CUR_NUM_THREADS;
+	double NUM_SAMPLES_PER_THREAD = 0.0;
 	pthread_barrier_wait(&barrier);
-#ifdef THROUGHPUT
-	st = getticks();
+#ifdef VERBOSE
+	printf("Enqueue thread woke up\n");
 #endif
-	for (int i=0;i<NUM_SAMPLES_PER_THREAD;i++)
+#ifdef THROUGHPUT
+	//st = getticks();
+	clock_gettime(CLOCK_MONOTONIC, &tstart);
+
+#endif
+	int count = 1;
+	//for (int i = 0; i < NUM_SAMPLES_PER_THREAD; i++)
+	double diff = 0.0;
+	clock_gettime(CLOCK_MONOTONIC, &looptime);
+	while(diff <= NUM_SECONDS)
 	{
 #ifdef LATENCY
 		start_tick = getticks();
 #endif
 		BasicDequeue();
 #ifdef LATENCY
-		end_tick = getticks();
-		pthread_mutex_lock(&lock);
-		dequeuetimestamp[numDequeue++] = (end_tick-start_tick);
-		//__sync_fetch_and_add(&numDequeue,1);
-		pthread_mutex_unlock(&lock);
-#endif
-	}
-#ifdef THROUGHPUT
-	et = getticks();
+	end_tick = getticks();
 	pthread_mutex_lock(&lock);
-	ticks diff_tick = et - st;
-	double elapsed = (diff_tick/clockFreq);
-	dequeuethroughput += ((NUM_SAMPLES_PER_THREAD * 1000000000.0)/elapsed);
+	dequeuetimestamp[numDequeue] = (end_tick-start_tick);
+	numDequeue++;
+	int loopVar = 0, altCount = 0;
+	if(numDequeue > 1000000)
+	{
+		for(int y=0;y<(numDequeue-1)/2;y++)
+		{
+			dequeuetimestamp[y] = dequeuetimestamp[altCount];
+			loopVar++;
+			altCount += 2;
+		}
+		numDequeue = loopVar;
+	}
+	pthread_mutex_unlock(&lock);
+#endif
+
+		if(count % 100000 == 0)
+		{
+			clock_gettime(CLOCK_MONOTONIC, &loopend);
+			NUM_SAMPLES_PER_THREAD += count;
+			count = 1;
+			diff = ( loopend.tv_sec - looptime.tv_sec );
+		}
+	}
+
+#ifdef THROUGHPUT
+	clock_gettime(CLOCK_MONOTONIC, &tend);
+	pthread_mutex_lock(&lock);
+	double elapsed = ( tend.tv_sec - tstart.tv_sec ) + (( tend.tv_nsec - tstart.tv_nsec )/ 1E9);
+	printf("elapsed time: %lf\n", elapsed);
+	printf("Num tasks run: %f\n", NUM_SAMPLES_PER_THREAD);
+	dequeuethroughput += ((NUM_SAMPLES_PER_THREAD*1.0)/elapsed);
+	DEQUEUE_SAMPLES += NUM_SAMPLES_PER_THREAD;
 	pthread_mutex_unlock(&lock);
 #endif
 
@@ -583,25 +791,38 @@ void *rculfenqueue_handler()
 #ifdef LATENCY
 	ticks start_tick, end_tick;
 #endif
+	struct timespec looptime, loopend;
 #ifdef THROUGHPUT
-	ticks st, et;
+	struct timespec tstart, tend;
 #endif
 
-	int NUM_SAMPLES_PER_THREAD = NUM_SAMPLES/CUR_NUM_THREADS;
+	//int NUM_SAMPLES_PER_THREAD = NUM_SAMPLES / CUR_NUM_THREADS;
+	double NUM_SAMPLES_PER_THREAD = 0.0;
 	pthread_barrier_wait(&barrier);
-#ifdef THROUGHPUT
-	st = getticks();
+#ifdef VERBOSE
+	printf("Enqueue thread woke up\n");
 #endif
-	for (int i=0;i<NUM_SAMPLES_PER_THREAD;i++)
+#ifdef THROUGHPUT
+	//st = getticks();
+	clock_gettime(CLOCK_MONOTONIC, &tstart);
+
+#endif
+	int count = 1;
+	//for (int i = 0; i < NUM_SAMPLES_PER_THREAD; i++)
+	double diff = 0.0;
+	clock_gettime(CLOCK_MONOTONIC, &looptime);
+	while(diff <= NUM_SECONDS)
 	{
 		struct mynode *node;
 #ifdef LATENCY
 		start_tick = getticks();
 #endif
+
 		node = malloc(sizeof(*node));
 
 		cds_lfq_node_init_rcu(&node->node);
-		node->value = i;
+		node->value = count;
+		__sync_fetch_and_add(&count,1);
 		/*
 		 * Both enqueue and dequeue need to be called within RCU
 		 * read-side critical section.
@@ -610,19 +831,44 @@ void *rculfenqueue_handler()
 		cds_lfq_enqueue_rcu(&myqueue, &node->node);
 		rcu_read_unlock();
 #ifdef LATENCY
-		end_tick = getticks();
-		pthread_mutex_lock(&lock);
-		enqueuetimestamp[numEnqueue] = (end_tick-start_tick);
-		__sync_fetch_and_add(&numEnqueue,1);
-		pthread_mutex_unlock(&lock);
-#endif
-	}
-#ifdef THROUGHPUT
-	et = getticks();
+	end_tick = getticks();
 	pthread_mutex_lock(&lock);
-	ticks diff_tick = et - st;
-	double elapsed = (diff_tick/clockFreq);
-	enqueuethroughput += ((NUM_SAMPLES_PER_THREAD * 1000000000.0)/elapsed);
+	enqueuetimestamp[numEnqueue] = (end_tick-start_tick);
+	numEnqueue++;
+	int loopVar = 0, altCount = 0;
+	if(numEnqueue > 1000000)
+	{
+		printf("numEnqueue %d\n", numEnqueue);
+		for(int y=0;y<(numEnqueue-1)/2;y++)
+		{
+			enqueuetimestamp[y] = enqueuetimestamp[altCount];
+			loopVar++;
+			altCount += 2;
+		}
+		numEnqueue = loopVar;
+		printf("loopVar %d\n", numEnqueue);
+	}
+	pthread_mutex_unlock(&lock);
+#endif
+//#ifdef THROUGHPUT
+		if(count % 100000 == 0)
+		{
+			clock_gettime(CLOCK_MONOTONIC, &loopend);
+			NUM_SAMPLES_PER_THREAD += count;
+			count = 1;
+			diff = ( loopend.tv_sec - looptime.tv_sec );
+		}
+//#endif
+	}
+
+#ifdef THROUGHPUT
+	clock_gettime(CLOCK_MONOTONIC, &tend);
+	pthread_mutex_lock(&lock);
+	double elapsed = ( tend.tv_sec - tstart.tv_sec ) + (( tend.tv_nsec - tstart.tv_nsec )/ 1E9);
+	printf("elapsed time: %lf\n", elapsed);
+	printf("Num tasks run: %f\n", NUM_SAMPLES_PER_THREAD);
+	enqueuethroughput += ((NUM_SAMPLES_PER_THREAD*1.0)/elapsed);
+	ENQUEUE_SAMPLES += NUM_SAMPLES_PER_THREAD;
 	pthread_mutex_unlock(&lock);
 #endif
 
@@ -634,16 +880,27 @@ void* rculfdequeue_handler()
 #ifdef LATENCY
 	ticks start_tick, end_tick;
 #endif
+	struct timespec looptime, loopend;
 #ifdef THROUGHPUT
-	ticks st, et;
+	struct timespec tstart, tend;
 #endif
 
-	int NUM_SAMPLES_PER_THREAD = NUM_SAMPLES/CUR_NUM_THREADS;
+	//int NUM_SAMPLES_PER_THREAD = NUM_SAMPLES / CUR_NUM_THREADS;
+	double NUM_SAMPLES_PER_THREAD = 0.0;
 	pthread_barrier_wait(&barrier);
-#ifdef THROUGHPUT
-	st = getticks();
+#ifdef VERBOSE
+	printf("Enqueue thread woke up\n");
 #endif
-	for (int i=0;i<NUM_SAMPLES_PER_THREAD;i++)
+#ifdef THROUGHPUT
+	//st = getticks();
+	clock_gettime(CLOCK_MONOTONIC, &tstart);
+
+#endif
+	int count = 1;
+	//for (int i = 0; i < NUM_SAMPLES_PER_THREAD; i++)
+	double diff = 0.0;
+	clock_gettime(CLOCK_MONOTONIC, &looptime);
+	while(diff <= NUM_SECONDS)
 	{
 		/*
 		 * Dequeue each node from the queue. Those will be dequeued from
@@ -664,34 +921,51 @@ void* rculfdequeue_handler()
 		rcu_read_unlock();
 
 #ifdef LATENCY
-		end_tick = getticks();
-		pthread_mutex_lock(&lock);
-		dequeuetimestamp[numDequeue++] = (end_tick-start_tick);
-		//__sync_fetch_and_add(&numDequeue,1);
-		pthread_mutex_unlock(&lock);
-#endif
-		//			if (!qnode) {
-		//				break;	/* Queue is empty. */
-		//			}
-
-		/* Getting the container structure from the node */
-		node = caa_container_of(qnode, struct mynode, node);
-#ifdef VERBOSE
-		printf(" %d", node->value);
-#endif
-		call_rcu(&node->rcu_head, free_node);
-	}
-#ifdef THROUGHPUT
-	et = getticks();
+	end_tick = getticks();
 	pthread_mutex_lock(&lock);
-	ticks diff_tick = et - st;
-	double elapsed = (diff_tick/clockFreq);
-	dequeuethroughput += ((NUM_SAMPLES_PER_THREAD * 1000000000.0)/elapsed);
+	dequeuetimestamp[numDequeue] = (end_tick-start_tick);
+	numDequeue++;
+	int loopVar = 0, altCount = 0;
+	if(numDequeue > 1000000)
+	{
+		for(int y=0;y<(numDequeue-1)/2;y++)
+		{
+			dequeuetimestamp[y] = dequeuetimestamp[altCount];
+			loopVar++;
+			altCount += 2;
+		}
+		numDequeue = loopVar;
+	}
+	pthread_mutex_unlock(&lock);
+#endif
+	/* Getting the container structure from the node */
+			node = caa_container_of(qnode, struct mynode, node);
+	#ifdef VERBOSE
+			printf(" %d", node->value);
+	#endif
+			call_rcu(&node->rcu_head, free_node);
+
+		if(count % 100000 == 0)
+		{
+			clock_gettime(CLOCK_MONOTONIC, &loopend);
+			NUM_SAMPLES_PER_THREAD += count;
+			count = 1;
+			diff = ( loopend.tv_sec - looptime.tv_sec );
+		}
+	}
+
+#ifdef THROUGHPUT
+	clock_gettime(CLOCK_MONOTONIC, &tend);
+	pthread_mutex_lock(&lock);
+	double elapsed = ( tend.tv_sec - tstart.tv_sec ) + (( tend.tv_nsec - tstart.tv_nsec )/ 1E9);
+	printf("elapsed time: %lf\n", elapsed);
+	printf("Num tasks run: %f\n", NUM_SAMPLES_PER_THREAD);
+	dequeuethroughput += ((NUM_SAMPLES_PER_THREAD*1.0)/elapsed);
+	DEQUEUE_SAMPLES += NUM_SAMPLES_PER_THREAD;
 	pthread_mutex_unlock(&lock);
 #endif
 
 	return 0;
-
 }
 #endif
 
@@ -706,7 +980,7 @@ void * simplesleephandler()
 	return 0;
 }
 
-void SortTicks(ticks* numTicks)
+void SortTicks(ticks* numTicks, int total, int faileddeq)
 {
 	//	ticks a;
 	//	for (int i = 0; i < NUM_SAMPLES; i++)
@@ -723,7 +997,7 @@ void SortTicks(ticks* numTicks)
 	//	    }
 
 	//printf("Size:%d, Num size:%ld\n", NUM_SAMPLES, sizeof(numTicks));
-	qsort(numTicks, (NUM_SAMPLES-failed_ck_dequeues), sizeof(*numTicks), cmpfunc);
+	qsort(numTicks, (total-faileddeq), sizeof(*numTicks), cmpfunc);
 }
 
 void ResetCounters() {
@@ -747,53 +1021,57 @@ void ComputeSummary(int type, int numThreads, FILE* afp, FILE* rfp, int rdtsc_ov
 	ticks dequeuetickMin = dequeuetimestamp[0]-rdtsc_overhead;
 	ticks dequeuetickMax = dequeuetimestamp[0]-rdtsc_overhead;
 	ticks *numEnqueueTicks, *numDequeueTicks;
-	numEnqueueTicks = (ticks *)malloc(sizeof(ticks)*NUM_SAMPLES);
-	numDequeueTicks = (ticks *)malloc(sizeof(ticks)*NUM_SAMPLES);
+	numEnqueueTicks = (ticks *)malloc(sizeof(ticks)*numEnqueue);
+	numDequeueTicks = (ticks *)malloc(sizeof(ticks)*numDequeue);
 
 	//compute the elapsed time per invocation, and find min and max
-	for (int i=0;i<NUM_SAMPLES;i++)
+	for (int i=0;i<numEnqueue;i++)
 	{
 		//compute the elapsed time per invocation, and subtract the cost of the emtpy loop cost per iteration
 		numEnqueueTicks[i]=enqueuetimestamp[i]-rdtsc_overhead;
 		totalEnqueueTicks += numEnqueueTicks[i];
 	}
 
-	for(int i=0;i<(NUM_SAMPLES-failed_ck_dequeues);i++)
+	for(int i=0;i<(numDequeue-failed_ck_dequeues);i++)
 	{
 		numDequeueTicks[i]= dequeuetimestamp[i]-rdtsc_overhead;
 		totalDequeueTicks += numDequeueTicks[i];
 	}
 
-	SortTicks(numEnqueueTicks);
-	SortTicks(numDequeueTicks);
-
-	for(int i=0;i<NUM_SAMPLES;i++)
-	{
+	SortTicks(numEnqueueTicks, numEnqueue, 0);
+	SortTicks(numDequeueTicks, numDequeue, failed_ck_dequeues);
 #ifdef RAW
+	int flag = 0, i = 0, j=0;
+	while(i < numEnqueue && i < numDequeue)
+	{
 		double dequeueTime = 0.0;
 		double enqueueTime = (numEnqueueTicks[i]/clockFreq);
-		if(i < (NUM_SAMPLES-failed_ck_dequeues))
+		if(i < (numDequeue-failed_ck_dequeues))
 			dequeueTime = (numDequeueTicks[i]/clockFreq);
 
-		fprintf(rfp, "%d %d %ld %ld %d %lf %lf\n", type, NUM_SAMPLES, (numEnqueueTicks[i]), (numDequeueTicks[i]), CUR_NUM_THREADS, enqueueTime, dequeueTime);
+		fprintf(rfp, "%d %d %d %ld %ld %d %lf %lf\n", type, numEnqueue, numDequeue, (numEnqueueTicks[i]), (numDequeueTicks[i]), CUR_NUM_THREADS, enqueueTime, dequeueTime);
 #ifdef VERBOSE
-		printf("%d %d %ld %ld %d %lf %lf\n", type, NUM_SAMPLES, (numEnqueueTicks[i]), (numDequeueTicks[i]), CUR_NUM_THREADS, enqueueTime, dequeueTime);
+		printf("%d %d %d %ld %ld %d %lf %lf\n", type, numEnqueue, numDequeue, (numEnqueueTicks[i]), (numDequeueTicks[i]), CUR_NUM_THREADS, enqueueTime, dequeueTime);
 #endif
-#endif
-
+		i++;
 	}
+#endif
 
 	enqueuetickMin = numEnqueueTicks[0];
-	enqueuetickMax = numEnqueueTicks[NUM_SAMPLES-1];
+	enqueuetickMax = numEnqueueTicks[numEnqueue-1];
 
 	dequeuetickMin = numDequeueTicks[0];
-	dequeuetickMax = numDequeueTicks[NUM_SAMPLES-1-failed_ck_dequeues];
+	dequeuetickMax = numDequeueTicks[numDequeue-1-failed_ck_dequeues];
+
+	//printf("do we get here? %f %d\n", totalEnqueueTicks, USED_SAMPLES);
 
 	//compute average
-	double tickEnqueueAverage = (totalEnqueueTicks/(NUM_SAMPLES));
-	double tickDequeueAverage = (totalDequeueTicks/(NUM_SAMPLES-failed_ck_dequeues));
+	double tickEnqueueAverage = (totalEnqueueTicks/(numEnqueue));
+	double tickDequeueAverage = (totalDequeueTicks/(numDequeue-failed_ck_dequeues));
 
-	printf("Num threads: %d, Num samples: %d\n", numThreads, NUM_SAMPLES);
+
+
+	printf("Num threads: %d, Num enqueue samples: %d, Num dequeue samples: %d\n", numThreads, numEnqueue, numDequeue);
 	printf("Enqueue Min: %ld\n", enqueuetickMin);
 	printf("Dequeue Min: %ld\n", dequeuetickMin);
 
@@ -805,15 +1083,21 @@ void ComputeSummary(int type, int numThreads, FILE* afp, FILE* rfp, int rdtsc_ov
 
 	ticks enqueuetickmedian = 0, dequeuetickmedian = 0;
 
-	if(NUM_SAMPLES % 2==0) {
+	if(numEnqueue % 2==0) {
 		// if there is an even number of elements, return mean of the two elements in the middle
-		enqueuetickmedian = ((numEnqueueTicks[(NUM_SAMPLES/2)] + numEnqueueTicks[(NUM_SAMPLES/2) - 1]) / 2.0);
-		dequeuetickmedian = ((numDequeueTicks[((NUM_SAMPLES-failed_ck_dequeues)/2)] + numDequeueTicks[((NUM_SAMPLES-failed_ck_dequeues)/2) - 1]) / 2.0);
+		enqueuetickmedian = ((numEnqueueTicks[(numEnqueue/2)] + numEnqueueTicks[(numEnqueue/2) - 1]) / 2.0);
 	} else {
 		// else return the element in the middle
-		enqueuetickmedian = numEnqueueTicks[(NUM_SAMPLES/2)];
-		dequeuetickmedian = numDequeueTicks[((NUM_SAMPLES-failed_ck_dequeues)/2)];
+		enqueuetickmedian = numEnqueueTicks[(numEnqueue/2)];
 	}
+
+	if(numDequeue % 2==0) {
+			// if there is an even number of elements, return mean of the two elements in the middle
+
+			dequeuetickmedian = ((numDequeueTicks[((numDequeue-failed_ck_dequeues)/2)] + numDequeueTicks[((numDequeue-failed_ck_dequeues)/2) - 1]) / 2.0);
+		} else {
+			dequeuetickmedian = numDequeueTicks[((numDequeue-failed_ck_dequeues)/2)];
+		}
 
 	printf("Median Enqueue : %ld\n", enqueuetickmedian);
 	printf("Median Dequeue : %ld\n", dequeuetickmedian);
@@ -834,14 +1118,14 @@ void ComputeSummary(int type, int numThreads, FILE* afp, FILE* rfp, int rdtsc_ov
 	printf("Average Enqueue Time (ns): %lf\n", enqueueAvgTime);
 	printf("Average Dequeue Time (ns): %lf\n", dequeueAvgTime);
 
-	fprintf(afp, "%d %d %d %ld %ld %ld %ld %lf %lf %ld %ld %lf %lf %lf %lf %lf %lf\n",type, numThreads, NUM_SAMPLES, enqueuetickMin, dequeuetickMin, enqueuetickMax, dequeuetickMax, tickEnqueueAverage, tickDequeueAverage, enqueuetickmedian, dequeuetickmedian, enqueueMinTime, dequeueMinTime, enqueueMaxTime, dequeueMaxTime, enqueueAvgTime, dequeueAvgTime);
+	fprintf(afp, "%d %d %d %d %ld %ld %ld %ld %lf %lf %ld %ld %lf %lf %lf %lf %lf %lf\n",type, numThreads, numEnqueue, numDequeue, enqueuetickMin, dequeuetickMin, enqueuetickMax, dequeuetickMax, tickEnqueueAverage, tickDequeueAverage, enqueuetickmedian, dequeuetickmedian, enqueueMinTime, dequeueMinTime, enqueueMaxTime, dequeueMaxTime, enqueueAvgTime, dequeueAvgTime);
 #endif
 #ifdef THROUGHPUT
-	printf("NumSamples:%d NumThreads:%d EnqueueThroughput:%f DequeueThroughput:%f\n", NUM_SAMPLES, numThreads, enqueuethroughput, dequeuethroughput);
+	printf("NumEnqueueSamples:%d NumDequeueSamples:%d NumThreads:%d EnqueueThroughput:%f DequeueThroughput:%f\n", ENQUEUE_SAMPLES, DEQUEUE_SAMPLES, numThreads, enqueuethroughput, dequeuethroughput);
 #ifdef TITLE
-	fprintf(afp, "NumSamples NumThreads EnqueueThroughput DequeueThroughput\n");
+	fprintf(afp, "EnqueueSamples DequeueSamples NumThreads EnqueueThroughput DequeueThroughput\n");
 #endif
-	fprintf(afp, "%d %d %f %f\n", NUM_SAMPLES, numThreads, enqueuethroughput, dequeuethroughput);
+	fprintf(afp, "%d %d %d %f %f\n", ENQUEUE_SAMPLES, DEQUEUE_SAMPLES, numThreads, enqueuethroughput, dequeuethroughput);
 #endif
 
 #ifdef LATENCY
@@ -988,28 +1272,22 @@ int main(int argc, char **argv) {
 #endif
 #endif
 	//Initialization
-	enqueuetimestamp = (ticks *)malloc(sizeof(ticks)*NUM_SAMPLES);
-	dequeuetimestamp = (ticks *)malloc(sizeof(ticks)*NUM_SAMPLES);
-
-	for (int i=0;i<NUM_SAMPLES;i++)
-	{
-		enqueuetimestamp[i] = (ticks)0;
-		dequeuetimestamp[i] = (ticks)0;
-	}
+//	enqueuetimestamp = (ticks *)malloc(sizeof(ticks)*NUM_SAMPLES);
+//	dequeuetimestamp = (ticks *)malloc(sizeof(ticks)*NUM_SAMPLES);
 
 	//	if(rfp == NULL || afp == NULL)
 	//		exit(-1);
 #ifdef RAW
 #ifdef TITLE
-	fprintf(rfp, "QueueType NumSamples EnqueueCycles DequeueCycles NumThreads EnqueueTime(ns) DequeueTime(ns)\n");
+	fprintf(rfp, "QueueType EnqueueSamples DequeueSamples EnqueueCycles DequeueCycles NumThreads EnqueueTime(ns) DequeueTime(ns)\n");
 #endif
 #endif
 #ifdef VERBOSE
-	printf("QueueType NumSamples EnqueueCycles DequeueCycles NumThreads EnqueueTime(ns) DequeueTime(ns)\n");
+	printf("QueueType EnqueueSamples DequeueSamples EnqueueCycles DequeueCycles NumThreads EnqueueTime(ns) DequeueTime(ns)\n");
 #endif
 #ifdef LATENCY
 #ifdef TITLE
-	fprintf(afp, "QueueType NumThreads NumSamples EnqueueMin DequeueMin EnqueueMax DequeueMax EnqueueAverage DequeueAverage EnqueueMedian DequeueMedian EnqueueMinTime DequeueMinTime EnqueueMaxTime DequeueMaxTime EnqueueAverageTime DequeueAverageTime\n");
+	fprintf(afp, "QueueType NumThreads EnqueueSamples DequeueSamples EnqueueMin DequeueMin EnqueueMax DequeueMax EnqueueAverage DequeueAverage EnqueueMedian DequeueMedian EnqueueMinTime DequeueMinTime EnqueueMaxTime DequeueMaxTime EnqueueAverageTime DequeueAverageTime\n");
 #endif
 #endif
 
@@ -1023,12 +1301,18 @@ int main(int argc, char **argv) {
 			ResetCounters();
 			enqueuetimestamp = (ticks *)malloc(sizeof(ticks)*NUM_SAMPLES);
 			dequeuetimestamp = (ticks *)malloc(sizeof(ticks)*NUM_SAMPLES);
+
+			for (int i=0;i<NUM_SAMPLES;i++)
+			{
+				enqueuetimestamp[i] = (ticks)0;
+				dequeuetimestamp[i] = (ticks)0;
+			}
 			CUR_NUM_THREADS = (threads[k])/2;
 
-			//pthread_t *worker_threads;
+			pthread_t *worker_threads;
 			pthread_t *enqueue_threads;
 
-			//worker_threads = (pthread_t *) malloc(sizeof(pthread_t) * CUR_NUM_THREADS);
+			worker_threads = (pthread_t *) malloc(sizeof(pthread_t) * CUR_NUM_THREADS);
 			enqueue_threads = (pthread_t *) malloc(sizeof(pthread_t) * CUR_NUM_THREADS);
 
 			cpu_set_t set;
@@ -1039,19 +1323,19 @@ int main(int argc, char **argv) {
 			pthread_setaffinity_np(pthread_self(), sizeof(set), &set);
 
 			//Set number of threads that will call the barrier_wait to total of enqueue and dequeue threads
-			//pthread_barrier_init(&barrier, NULL, threads[k]);
+			pthread_barrier_init(&barrier, NULL, threads[k]);
 
 			for (int i = 0; i < CUR_NUM_THREADS; i++)
 			{
 				printf("Starting threads %d\n", i);
 				pthread_create(&enqueue_threads[i], NULL, enqueue_handler,(void*) (unsigned long) (i));
-				//pthread_create(&worker_threads[i], NULL, worker_handler,(void*) (unsigned long) (i));
+				pthread_create(&worker_threads[i], NULL, worker_handler,(void*) (unsigned long) (i));
 			}
 
 			for (int i = 0; i < CUR_NUM_THREADS; i++)
 			{
 				pthread_join(enqueue_threads[i], NULL);
-				//pthread_join(worker_threads[i], NULL);
+				pthread_join(worker_threads[i], NULL);
 			}
 
 			ComputeSummary(queueType, CUR_NUM_THREADS, afp, rfp, rdtsc_overhead_ticks);
@@ -1081,6 +1365,11 @@ int main(int argc, char **argv) {
 
 			enqueuetimestamp = (ticks *)malloc(sizeof(ticks)*NUM_SAMPLES);
 			dequeuetimestamp = (ticks *)malloc(sizeof(ticks)*NUM_SAMPLES);
+			for (int i=0;i<NUM_SAMPLES;i++)
+						{
+							enqueuetimestamp[i] = (ticks)0;
+							dequeuetimestamp[i] = (ticks)0;
+						}
 			CUR_NUM_THREADS = (threads[k])/2;
 
 			pthread_t *worker_threads;
@@ -1121,6 +1410,11 @@ int main(int argc, char **argv) {
 
 			enqueuetimestamp = (ticks *)malloc(sizeof(ticks)*NUM_SAMPLES);
 			dequeuetimestamp = (ticks *)malloc(sizeof(ticks)*NUM_SAMPLES);
+			for (int i=0;i<NUM_SAMPLES;i++)
+						{
+							enqueuetimestamp[i] = (ticks)0;
+							dequeuetimestamp[i] = (ticks)0;
+						}
 			CUR_NUM_THREADS = (threads[k])/2;
 
 			pthread_t *worker_threads;
@@ -1162,6 +1456,11 @@ int main(int argc, char **argv) {
 			ResetCounters();
 			enqueuetimestamp = (ticks *)malloc(sizeof(ticks)*NUM_SAMPLES);
 			dequeuetimestamp = (ticks *)malloc(sizeof(ticks)*NUM_SAMPLES);
+			for (int i=0;i<NUM_SAMPLES;i++)
+						{
+							enqueuetimestamp[i] = (ticks)0;
+							dequeuetimestamp[i] = (ticks)0;
+						}
 
 			pthread_t *worker_threads;
 			pthread_t *enqueue_threads;
@@ -1208,6 +1507,11 @@ int main(int argc, char **argv) {
 			ResetCounters();
 			enqueuetimestamp = (ticks *)malloc(sizeof(ticks)*NUM_SAMPLES);
 			dequeuetimestamp = (ticks *)malloc(sizeof(ticks)*NUM_SAMPLES);
+			for (int i=0;i<NUM_SAMPLES;i++)
+						{
+							enqueuetimestamp[i] = (ticks)0;
+							dequeuetimestamp[i] = (ticks)0;
+						}
 
 			pthread_t *worker_threads;
 			pthread_t *enqueue_threads;

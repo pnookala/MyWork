@@ -10,7 +10,7 @@
 
 #include <stdio.h>
 
-#define NUM_SAMPLES 8//12000000 //(128000*1024)
+#define NUM_SAMPLES 1000000 //(128000*1024)
 #define MAX_SIZE NUM_SAMPLES        // Define maximum length of the queue
 typedef int atom;
 
