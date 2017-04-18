@@ -61,7 +61,7 @@ float clockFreq;
 typedef long unsigned int ticks;
 #define NUM_THREADS 1
 #define NUM_CPUS 1
-#define NUM_SECONDS 1.0
+#define NUM_SECONDS 3.0
 
 ticks *enqueuetimestamp, *dequeuetimestamp;
 
