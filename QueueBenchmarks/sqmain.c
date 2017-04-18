@@ -522,8 +522,16 @@ void *ck_worker_handler(void *arguments) {
 #ifdef LATENCY
 	end_tick = getticks();
 	pthread_mutex_lock(&lock);
-	dequeuetimestamp[numDequeue] = (end_tick-start_tick);
-	numDequeue++;
+	if(success == 0)
+	{
+		__sync_fetch_and_add(&failed_ck_dequeues,1);
+		success = 1;
+		}
+	 else
+	 {
+		dequeuetimestamp[numDequeue] = (end_tick-start_tick);
+		__sync_fetch_and_add(&numDequeue,1);
+	 }
 	int loopVar = 0, altCount = 0;
 	if(numDequeue > 1000000)
 	{
