@@ -1012,7 +1012,7 @@ void SortTicks(ticks* numTicks, int total, int faileddeq)
 	//	    }
 
 	//printf("Size:%d, Num size:%ld\n", NUM_SAMPLES, sizeof(numTicks));
-	qsort(numTicks, (total-faileddeq), sizeof(*numTicks), cmpfunc);
+	qsort(numTicks, total, sizeof(*numTicks), cmpfunc);
 }
 
 void ResetCounters() {
@@ -1050,7 +1050,7 @@ void ComputeSummary(int type, int numThreads, FILE* afp, FILE* rfp, int rdtsc_ov
 		totalEnqueueTicks += numEnqueueTicks[i];
 	}
 
-	for(int i=0;i<(numDequeue-failed_ck_dequeues);i++)
+	for(int i=0;i<(numDequeue);i++)
 	{
 		numDequeueTicks[i]= dequeuetimestamp[i]-rdtsc_overhead;
 		totalDequeueTicks += numDequeueTicks[i];
@@ -1065,7 +1065,7 @@ void ComputeSummary(int type, int numThreads, FILE* afp, FILE* rfp, int rdtsc_ov
 	{
 		double dequeueTime = 0.0;
 		double enqueueTime = (numEnqueueTicks[i]/clockFreq);
-		if(i < (numDequeue-failed_ck_dequeues))
+		if(i < (numDequeue))
 			dequeueTime = (numDequeueTicks[i]/clockFreq);
 
 		fprintf(rfp, "%d %d %d %ld %ld %d %lf %lf\n", type, numEnqueue, numDequeue, (numEnqueueTicks[i]), (numDequeueTicks[i]), CUR_NUM_THREADS, enqueueTime, dequeueTime);
@@ -1080,11 +1080,11 @@ void ComputeSummary(int type, int numThreads, FILE* afp, FILE* rfp, int rdtsc_ov
 	enqueuetickMax = numEnqueueTicks[numEnqueue-1];
 
 	dequeuetickMin = numDequeueTicks[0];
-	dequeuetickMax = numDequeueTicks[numDequeue-1-failed_ck_dequeues];
+	dequeuetickMax = numDequeueTicks[numDequeue-1];
 
 	//compute average
 	double tickEnqueueAverage = (totalEnqueueTicks/(numEnqueue));
-	double tickDequeueAverage = (totalDequeueTicks/(numDequeue-failed_ck_dequeues));
+	double tickDequeueAverage = (totalDequeueTicks/(numDequeue));
 
 	printf("Num threads: %d, Num enqueue samples: %d, Num dequeue samples: %d\n", numThreads, numEnqueue, numDequeue);
 	printf("Enqueue Min: %ld\n", enqueuetickMin);
@@ -1109,9 +1109,9 @@ void ComputeSummary(int type, int numThreads, FILE* afp, FILE* rfp, int rdtsc_ov
 	if(numDequeue % 2==0) {
 			// if there is an even number of elements, return mean of the two elements in the middle
 
-			dequeuetickmedian = ((numDequeueTicks[((numDequeue-failed_ck_dequeues)/2)] + numDequeueTicks[((numDequeue-failed_ck_dequeues)/2) - 1]) / 2.0);
+			dequeuetickmedian = ((numDequeueTicks[((numDequeue)/2)] + numDequeueTicks[((numDequeue)/2) - 1]) / 2.0);
 		} else {
-			dequeuetickmedian = numDequeueTicks[((numDequeue-failed_ck_dequeues)/2)];
+			dequeuetickmedian = numDequeueTicks[((numDequeue)/2)];
 		}
 
 	printf("Median Enqueue : %ld\n", enqueuetickmedian);
