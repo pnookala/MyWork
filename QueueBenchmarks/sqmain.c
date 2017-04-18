@@ -193,7 +193,7 @@ void *worker_handler(void * in) {
 	end_tick = getticks();
 	pthread_mutex_lock(&lock);
 	dequeuetimestamp[numDequeue] = (end_tick-start_tick);
-	numDequeue++;
+	__sync_fetch_and_add(&numDequeue, 1);
 	int loopVar = 0, altCount = 0;
 	if(numDequeue > 1000000)
 	{
@@ -277,7 +277,7 @@ void *enqueue_handler(void * in)
 	end_tick = getticks();
 	pthread_mutex_lock(&lock);
 	enqueuetimestamp[numEnqueue] = (end_tick-start_tick);
-	numEnqueue++;
+	__sync_fetch_and_add(&numEnqueue, 1);
 	int loopVar = 0, altCount = 0;
 	if(numEnqueue > 1000000)
 	{
@@ -356,7 +356,7 @@ void *workermultiple_handler(void * in) {
 	end_tick = getticks();
 	pthread_mutex_lock(&lock);
 	dequeuetimestamp[numDequeue] = (end_tick-start_tick);
-	numDequeue++;
+	__sync_fetch_and_add(&numDequeue, 1);
 	int loopVar = 0, altCount = 0;
 	if(numDequeue > 1000000)
 	{
@@ -440,7 +440,7 @@ void *enqueuemultiple_handler(void * in)
 	end_tick = getticks();
 	pthread_mutex_lock(&lock);
 	enqueuetimestamp[numEnqueue] = (end_tick-start_tick);
-	numEnqueue++;
+	__sync_fetch_and_add(&numEnqueue, 1);
 	int loopVar = 0, altCount = 0;
 	if(numEnqueue > 1000000)
 	{
@@ -673,7 +673,7 @@ void *basicenqueue_handler(void *_queue)
 	end_tick = getticks();
 	pthread_mutex_lock(&lock);
 	enqueuetimestamp[numEnqueue] = (end_tick-start_tick);
-	numEnqueue++;
+	__sync_fetch_and_add(&numEnqueue, 1);
 	int loopVar = 0, altCount = 0;
 	if(numEnqueue > 1000000)
 	{
@@ -750,7 +750,7 @@ void *basicworker_handler(void *_queue)
 	end_tick = getticks();
 	pthread_mutex_lock(&lock);
 	dequeuetimestamp[numDequeue] = (end_tick-start_tick);
-	numDequeue++;
+	__sync_fetch_and_add(&numDequeue, 1);
 	int loopVar = 0, altCount = 0;
 	if(numDequeue > 1000000)
 	{
@@ -836,7 +836,7 @@ void *rculfenqueue_handler()
 	end_tick = getticks();
 	pthread_mutex_lock(&lock);
 	enqueuetimestamp[numEnqueue] = (end_tick-start_tick);
-	numEnqueue++;
+	__sync_fetch_and_add(&numEnqueue, 1);
 	int loopVar = 0, altCount = 0;
 	if(numEnqueue > 1000000)
 	{
@@ -927,7 +927,7 @@ void* rculfdequeue_handler()
 	end_tick = getticks();
 	pthread_mutex_lock(&lock);
 	dequeuetimestamp[numDequeue] = (end_tick-start_tick);
-	numDequeue++;
+	__sync_fetch_and_add(&numDequeue, 1);
 	int loopVar = 0, altCount = 0;
 	if(numDequeue > 1000000)
 	{
@@ -1330,7 +1330,6 @@ int main(int argc, char **argv) {
 
 			for (int i = 0; i < CUR_NUM_THREADS; i++)
 			{
-				printf("Starting threads %d\n", i);
 				pthread_create(&enqueue_threads[i], NULL, enqueue_handler,(void*) (unsigned long) (i));
 				pthread_create(&worker_threads[i], NULL, worker_handler,(void*) (unsigned long) (i));
 			}
