@@ -228,6 +228,8 @@ void *worker_handler(void * in) {
 	pthread_mutex_unlock(&lock);
 #endif
 
+	printf("dequeue thread exited\n");
+
 	return 0;
 
 }
@@ -312,6 +314,8 @@ void *enqueue_handler(void * in)
 	ENQUEUE_SAMPLES += NUM_SAMPLES_PER_THREAD;
 	pthread_mutex_unlock(&lock);
 #endif
+
+	printf("enqueue thread exited\n");
 
 return 0;
 }
