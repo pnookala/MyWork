@@ -1023,6 +1023,7 @@ void ResetCounters() {
 
 void ComputeSummary(int type, int numThreads, FILE* afp, FILE* rfp, int rdtsc_overhead)
 {
+	printf("Printing summary\n");
 #ifdef LATENCY
 	ticks totalEnqueueTicks = 0,  totalDequeueTicks = 0;
 	ticks enqueuetickMin = enqueuetimestamp[0]-rdtsc_overhead;
@@ -1049,8 +1050,9 @@ void ComputeSummary(int type, int numThreads, FILE* afp, FILE* rfp, int rdtsc_ov
 
 	SortTicks(numEnqueueTicks, numEnqueue, 0);
 	SortTicks(numDequeueTicks, numDequeue, failed_ck_dequeues);
+	printf("Sorting done!\n");
 #ifdef RAW
-	int flag = 0, i = 0, j=0;
+	int flag = 0, i = 0;
 	while(i < numEnqueue && i < numDequeue)
 	{
 		double dequeueTime = 0.0;
@@ -1076,8 +1078,6 @@ void ComputeSummary(int type, int numThreads, FILE* afp, FILE* rfp, int rdtsc_ov
 	double tickEnqueueAverage = (totalEnqueueTicks/(numEnqueue));
 	double tickDequeueAverage = (totalDequeueTicks/(numDequeue-failed_ck_dequeues));
 
-
-
 	printf("Num threads: %d, Num enqueue samples: %d, Num dequeue samples: %d\n", numThreads, numEnqueue, numDequeue);
 	printf("Enqueue Min: %ld\n", enqueuetickMin);
 	printf("Dequeue Min: %ld\n", dequeuetickMin);
@@ -1090,7 +1090,7 @@ void ComputeSummary(int type, int numThreads, FILE* afp, FILE* rfp, int rdtsc_ov
 
 	ticks enqueuetickmedian = 0, dequeuetickmedian = 0;
 
-	if(numEnqueue % 2==0) {
+	if(numEnqueue % 2 == 0) {
 		// if there is an even number of elements, return mean of the two elements in the middle
 		enqueuetickmedian = ((numEnqueueTicks[(numEnqueue/2)] + numEnqueueTicks[(numEnqueue/2) - 1]) / 2.0);
 	} else {
