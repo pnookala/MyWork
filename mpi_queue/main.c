@@ -28,6 +28,47 @@ static __inline__ ticks getticks(void) {
 	return tsc;
 }
 
+int cmpfunc (const void * a, const void * b)
+{
+	return ( *(int*)a - *(int*)b );
+}
+
+
+void SortTicks(ticks* numTicks, int total)
+{
+	qsort(numTicks, total, sizeof(*numTicks), cmpfunc);
+}
+
+void ComputeSummary()
+{
+#ifdef LATENCY
+	int i;
+	ticks totalTicks = 0;
+	ticks tickMin = endtimestamp[0]-starttimestamp[0];
+	ticks tickMax = endtimestamp[0]-starttimestamp[0];
+	ticks *numTicks;
+		numTicks = (ticks *)malloc(sizeof(ticks)*NUM_SAMPLES);
+
+	//compute the elapsed time per invocation, and find min and max
+	for (i=0;i<NUM_SAMPLES;i++)
+	{
+		//compute the elapsed time per invocation, and subtract the cost of the emtpy loop cost per iteration
+		numTicks[i] = (endtimestamp[i]-starttimestamp[i]);
+		totalTicks += numTicks[i];
+	}
+
+	SortTicks(numTicks, NUM_SAMPLES);
+
+	tickMin = numTicks[0];
+	tickMax = numTicks[NUM_SAMPLES-1];
+	//compute average
+	double tickAverage = (totalTicks/(NUM_SAMPLES));
+	printf("AverageLatency %f\n", tickAverage);
+
+	free(numTicks);
+#endif
+}
+
 int main(int argc, char** argv) {
   // Initialize the MPI environment
   MPI_Init(NULL, NULL);
@@ -71,10 +112,11 @@ int main(int argc, char** argv) {
 
   MPI_Barrier(MPI_COMM_WORLD);
 #ifdef LATENCY
-  for(i=0; i<NUM_SAMPLES;i++)
-  {
-	  printf("Latency %ld\n", (endtimestamp[i]-starttimestamp[i]));
-  }
+//  for(i=0; i<NUM_SAMPLES;i++)
+//  {
+//	  printf("Latency %ld\n", (endtimestamp[i]-starttimestamp[i]));
+//  }
+  ComputeSummary();
 #endif
 #ifdef THROUGHPUT
   printf("Throughput %f\n", ((end-start)/NUM_SAMPLES));
