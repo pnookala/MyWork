@@ -982,7 +982,7 @@ int cmpfunc (const void * a, const void * b)
 	return ( *(int*)a - *(int*)b );
 }
 
-void * simplesleephandler()
+void* simplesleephandler()
 {
 	sleep(0);
 	return 0;
@@ -1711,7 +1711,7 @@ int main(int argc, char **argv) {
 			for(int i=0; i<NUM_SAMPLES; i++)
 			{
 				pthread_t t;
-				pthread_create(&t, NULL, simplesleephandler,NULL);
+				pthread_create(&t, NULL, simplesleephandler, NULL);
 				pthread_join(t, NULL);
 			}
 #ifdef THROUGHPUT

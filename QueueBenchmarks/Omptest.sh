@@ -1,29 +1,19 @@
 #! /bin/sh
 
-make clean rawwithtitle
-./sqmain 6 2 OmpSQueueLatencyRaw2 OmpSQueueLatencySummary
-make clean raw
-./sqmain 6 4 OmpSQueueLatencyRaw4 OmpSQueueLatencySummary
-./sqmain 6 6 OmpSQueueLatencyRaw6 OmpSQueueLatencySummary
-./sqmain 6 8 OmpSQueueLatencyRaw8 OmpSQueueLatencySummary
-./sqmain 6 12 OmpSQueueLatencyRaw12 OmpSQueueLatencySummary
-./sqmain 6 16 OmpSQueueLatencyRaw16 OmpSQueueLatencySummary
-./sqmain 6 24 OmpSQueueLatencyRaw24 OmpSQueueLatencySummary
-./sqmain 6 32 OmpSQueueLatencyRaw32 OmpSQueueLatencySummary
-./sqmain 6 48 OmpSQueueLatencyRaw48 OmpSQueueLatencySummary
+./sqmain_rawwithtitle 4 2 MSQLatencyRaw2 MSQLatencySummary
+./sqmain_raw 4 4 MSQLatencyRaw4 MSQLatencySummary
+./sqmain_raw 4 6 MSQLatencyRaw6 MSQLatencySummary
+./sqmain_raw 4 8 MSQLatencyRaw8 MSQLatencySummary
+./sqmain_raw 4 12 MSQLatencyRaw12 MSQLatencySummary
+./sqmain_raw 4 16 MSQLatencyRaw16 MSQLatencySummary
+./sqmain_raw 4 24 MSQLatencyRaw24 MSQLatencySummary
+./sqmain_raw 4 32 MSQLatencyRaw32 MSQLatencySummary
+./sqmain_raw 4 48 MSQLatencyRaw48 MSQLatencySummary
+./sqmain_all 4 96,114,192,228,384 MSQLatencyRaw2 MSQLatencySumma
+./sqmain_all 4 456,768,912,1024 MSQLatencyRaw2 MSQLatencySummary
 
-make clean all
-./sqmain 6 96,114,192,228,384 OmpSQueueLatencyRaw2 OmpSQueueLatencySummary
-./sqmain 6 456,768,912,1024 OmpSQueueLatencyRaw2 OmpSQueueLatencySummary
-
-make clean thwithtitle
-./sqmain 6 2 OmpSQueueLatencyRaw2 OmpSQueueThroughputSummary
-make clean th
-./sqmain 6 4,6,8,12,16 OmpSQueueLatencyRaw2 OmpSQueueThroughputSummary
-./sqmain 6 24,32,48 OmpSQueueLatencyRaw2 OmpSQueueThroughputSummary
-./sqmain 6 96,114,192,228,384 OmpSQueueLatencyRaw2 OmpSQueueThroughputSummary
-./sqmain 6 456,768,912,1024 OmpSQueueLatencyRaw2 OmpSQueueThroughputSummary
-
-
-
-
+./sqmain_thwithtitle 4 2 MSQLatencyRaw2 MSQThroughputSummary
+./sqmain_th 4 4,6,8,12,16 MSQLatencyRaw2 MSQThroughputSummary
+./sqmain_th 4 24,32,48 MSQLatencyRaw2 MSQThroughputSummary
+./sqmain_th 4 96,114,192,228,384 MSQLatencyRaw2 MSQThroughputSummary
+./sqmain_th 4 456,768,912,1024 MSQLatencyRaw2 MSQThroughputSummary
