@@ -163,22 +163,24 @@ void *worker_handler(void * in) {
 #ifdef LATENCY
 	ticks start_tick, end_tick, last_tick;
 #endif
-	struct timespec looptime, loopend;
+
 #ifdef THROUGHPUT
+	struct timespec looptime, loopend;
 	struct timespec tstart, tend;
 #endif
 
 	int NUM_TASKS_PER_THREAD = NUM_SAMPLES / CUR_NUM_THREADS;
-	double NUM_SAMPLES_PER_THREAD = 0.0;
+
 	pthread_barrier_wait(&barrier);
 #ifdef VERBOSE
 	printf("Dequeue thread woke up\n");
 #endif
-	int count = 1;
 
-		double diff = 0.0;
-		clock_gettime(CLOCK_MONOTONIC, &looptime);
 #ifdef THROUGHPUT
+	clock_gettime(CLOCK_MONOTONIC, &looptime);
+	double NUM_SAMPLES_PER_THREAD = 0.0;
+	int count = 1;
+	double diff = 0.0;
 	//st = getticks();
 	clock_gettime(CLOCK_MONOTONIC, &tstart);
 	while(diff <= DEQUEUE_SECONDS)
@@ -187,7 +189,6 @@ void *worker_handler(void * in) {
 
 #ifdef LATENCY
 		start_tick = getticks();
-		last_tick = start_tick;
 		for (int i = 0; i < NUM_TASKS_PER_THREAD; i++)
 		{
 #endif
@@ -195,11 +196,11 @@ void *worker_handler(void * in) {
 #ifdef LATENCY
 		end_tick = getticks();
 		pthread_mutex_lock(&lock);
-		dequeuetimestamp[numDequeue] = (end_tick-last_tick);
+		dequeuetimestamp[numDequeue] = (end_tick-start_tick);
 #if VERBOSE
 		printf("Dequeue end_tick: %ld, last_tick: %ld, diff: %ld\n", end_tick, last_tick, dequeuetimestamp[numDequeue]);
 #endif
-		last_tick = end_tick;
+		start_tick = end_tick;
 		__sync_fetch_and_add(&numDequeue, 1);
 //		int loopVar = 0, altCount = 0;
 //		if(numDequeue > 1000000)
@@ -281,19 +282,18 @@ void *enqueue_handler(void * in)
 #endif
 #ifdef LATENCY
 		start_tick = getticks();
-		last_tick = start_tick;
 		for (int i = 0; i < NUM_TASKS_PER_THREAD; i++)
 		{
 #endif
-			Enqueue((atom)count++);
+			Enqueue((atom)i+1);
 #ifdef LATENCY
 			end_tick = getticks();
 			pthread_mutex_lock(&lock);
-			enqueuetimestamp[numEnqueue] = end_tick - last_tick;
+			enqueuetimestamp[numEnqueue] = end_tick - start_tick;
 #if VERBOSE
 			printf("Enqueue end_tick: %ld, last_tick: %ld, diff: %ld\n", end_tick, last_tick, enqueuetimestamp[numEnqueue]);
 #endif
-			last_tick = end_tick;
+			start_tick = end_tick;
 			__sync_fetch_and_add(&numEnqueue, 1);
 
 			//	int loopVar = 0, altCount = 0;
@@ -310,6 +310,7 @@ void *enqueue_handler(void * in)
 			pthread_mutex_unlock(&lock);
 #endif
 #ifdef THROUGHPUT
+			count++;
 			if(count % 10000 == 0)
 			{
 				clock_gettime(CLOCK_MONOTONIC, &loopend);
