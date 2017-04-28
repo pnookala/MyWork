@@ -150,7 +150,7 @@ inline atom Dequeue()
 //--------------------------------------------
 inline int isEmpty()
 {
-    return (head == tail);
+    return ((tail - MAX_SIZE) > 0 && (head == tail));
 }
 
 //--------------------------------------------
