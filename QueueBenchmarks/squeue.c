@@ -118,7 +118,7 @@ inline atom Dequeue()
 {
     atom elem;
     
-    
+    if(isEmpty()) return -1;
     
     int cur_head = __sync_add_and_fetch(&head,1);
     
