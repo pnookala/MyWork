@@ -1,8 +1,8 @@
 #! /bin/sh
 
-make clean rawwithtitle
+make clean all
 ./sqmain 1 2 SQueueLatencyRaw2 SQueueLatencySummary
-make clean raw
+make clean all
 ./sqmain 1 4 SQueueLatencyRaw4 SQueueLatencySummary
 ./sqmain 1 6 SQueueLatencyRaw6 SQueueLatencySummary
 ./sqmain 1 8 SQueueLatencyRaw8 SQueueLatencySummary
@@ -16,13 +16,13 @@ make clean all
 ./sqmain 1 96,114,192,228,384 SQueueLatencyRaw2 SQueueLatencySummary
 ./sqmain 1 456,768,912,1024 SQueueLatencyRaw2 SQueueLatencySummary
 
-make clean thwithtitle
-./sqmain 1 2 SQueueLatencyRaw2 SQueueThroughputSummary
-make clean th
-./sqmain 1 4,6,8,12,16 SQueueLatencyRaw2 SQueueThroughputSummary
-./sqmain 1 24,32,48 SQueueLatencyRaw2 SQueueThroughputSummary
-./sqmain 1 96,114,192,228,384 SQueueLatencyRaw2 SQueueThroughputSummary
-./sqmain 1 456,768,912,1024 SQueueLatencyRaw2 SQueueThroughputSummary
+#make clean thwithtitle
+#./sqmain 1 2 SQueueLatencyRaw2 SQueueThroughputSummary
+#make clean th
+#./sqmain 1 4,6,8,12,16 SQueueLatencyRaw2 SQueueThroughputSummary
+#./sqmain 1 24,32,48 SQueueLatencyRaw2 SQueueThroughputSummary
+#./sqmain 1 96,114,192,228,384 SQueueLatencyRaw2 SQueueThroughputSummary
+#./sqmain 1 456,768,912,1024 SQueueLatencyRaw2 SQueueThroughputSummary
 
 
 
