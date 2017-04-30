@@ -176,7 +176,7 @@ void *worker_handler(void * in) {
 #endif
 	int ret;
 #ifdef THROUGHPUT
-	int NUM_SAMPLES_PER_THREAD = 0;
+	long int NUM_SAMPLES_PER_THREAD = 0;
 	int count = 1;
 	double diff = 0.0;
 	clock_gettime(CLOCK_MONOTONIC, &looptime);
@@ -243,7 +243,7 @@ void *worker_handler(void * in) {
 #ifdef THROUGHPUT
 		struct timespec tstart, tend, looptime, loopend;
 		int i = 1;
-		int NUM_SAMPLES_PER_THREAD = 0;
+		long int NUM_SAMPLES_PER_THREAD = 0;
 		double diff = 0.0;
 #endif
 
@@ -251,7 +251,6 @@ void *worker_handler(void * in) {
 
 #ifdef THROUGHPUT
 		clock_gettime(CLOCK_MONOTONIC, &looptime);
-		NUM_SAMPLES_PER_THREAD = NUM_SAMPLES;
 		clock_gettime(CLOCK_MONOTONIC, &tstart);
 		while(diff <= ENQUEUE_SECONDS)
 		{
