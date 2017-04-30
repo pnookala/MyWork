@@ -305,61 +305,64 @@ void *worker_handler(void * in) {
 			pthread_setaffinity_np(pthread_self(), sizeof(set), &set);
 
 #ifdef LATENCY
-			ticks start_tick, end_tick;
-#endif
-			//struct timespec looptime, loopend;
-#ifdef THROUGHPUT
-			struct timespec tstart, tend;
-			//double NUM_SAMPLES_PER_THREAD = 0.0;
+	ticks start_tick, end_tick;
+	int NUM_SAMPLES_PER_THREAD = NUM_SAMPLES / CUR_NUM_THREADS;
 #endif
 
-			int NUM_SAMPLES_PER_THREAD = NUM_SAMPLES / CUR_NUM_THREADS;
-			pthread_barrier_wait(&barrier);
 #ifdef THROUGHPUT
-			//st = getticks();
-			NUM_SAMPLES_PER_THREAD = NUM_SAMPLES;
-			clock_gettime(CLOCK_MONOTONIC, &tstart);
-//			int count = 1;
-//			double diff = 0.0;
-//			clock_gettime(CLOCK_MONOTONIC, &looptime);
-//			while(diff <= DEQUEUE_SECONDS)
-//			{
+	struct timespec looptime, loopend;
+	struct timespec tstart, tend;
 #endif
-				for (int i = 0; i < NUM_SAMPLES_PER_THREAD; i++)
-				{
+
+	pthread_barrier_wait(&barrier);
+#ifdef VERBOSE
+	printf("Dequeue thread woke up\n");
+#endif
+	int ret;
+#ifdef THROUGHPUT
+	long int NUM_SAMPLES_PER_THREAD = 0;
+	int count = 1;
+	double diff = 0.0;
+	clock_gettime(CLOCK_MONOTONIC, &looptime);
+	clock_gettime(CLOCK_MONOTONIC, &tstart);
+	while(diff <= DEQUEUE_SECONDS && ret != -1)
+	{
+#endif
 #ifdef LATENCY
-					start_tick = getticks();
+		for (int i = 0; i < NUM_SAMPLES_PER_THREAD; i++)
+		{
+			start_tick = getticks();
 #endif
 					DequeueMultiple(queues[my_cpu], my_cpu);
 
 #ifdef LATENCY
-					end_tick = getticks();
-					pthread_mutex_lock(&lock);
-					dequeuetimestamp[numDequeue] = (end_tick-start_tick);
-					__sync_fetch_and_add(&numDequeue, 1);
-					pthread_mutex_unlock(&lock);
+			end_tick = getticks();
+			pthread_mutex_lock(&lock);
+			dequeuetimestamp[numDequeue] = (end_tick-start_tick);
+			__sync_fetch_and_add(&numDequeue, 1);
+			pthread_mutex_unlock(&lock);
 #endif
-//#ifdef THROUGHPUT
-//					count++;
-//					if(count % 100000 == 0)
-//					{
-//						clock_gettime(CLOCK_MONOTONIC, &loopend);
-//						NUM_SAMPLES_PER_THREAD += count;
-//						count = 1;
-//						diff = ( loopend.tv_sec - looptime.tv_sec );
-//					}
-//#endif
-				}
+#ifdef THROUGHPUT
+			count++;
+			if(count % 10000 == 0 || ret == -1)
+			{
+				clock_gettime(CLOCK_MONOTONIC, &loopend);
+				NUM_SAMPLES_PER_THREAD += count;
+				count = 1;
+				diff = ( loopend.tv_sec - looptime.tv_sec );
+			}
+#endif
+		}
 
 #ifdef THROUGHPUT
-				clock_gettime(CLOCK_MONOTONIC, &tend);
-				pthread_mutex_lock(&lock);
-				double elapsed = ( tend.tv_sec - tstart.tv_sec ) + (( tend.tv_nsec - tstart.tv_nsec )/ 1E9);
-				printf("elapsed time: %lf\n", elapsed);
-				printf("Num tasks run: %d\n", NUM_SAMPLES_PER_THREAD);
-				dequeuethroughput += ((NUM_SAMPLES_PER_THREAD*1.0)/elapsed);
-				DEQUEUE_SAMPLES += NUM_SAMPLES_PER_THREAD;
-				pthread_mutex_unlock(&lock);
+		clock_gettime(CLOCK_MONOTONIC, &tend);
+		pthread_mutex_lock(&lock);
+		double elapsed = ( tend.tv_sec - tstart.tv_sec ) + (( tend.tv_nsec - tstart.tv_nsec )/ 1E9);
+		printf("elapsed time: %lf\n", elapsed);
+		printf("Num dequeue tasks run: %d\n", NUM_SAMPLES_PER_THREAD);
+		dequeuethroughput += ((NUM_SAMPLES_PER_THREAD*1.0)/elapsed);
+		DEQUEUE_SAMPLES += NUM_SAMPLES_PER_THREAD;
+		pthread_mutex_unlock(&lock);
 #endif
 
 				return 0;
@@ -378,62 +381,59 @@ void *worker_handler(void * in) {
 				pthread_setaffinity_np(pthread_self(), sizeof(set), &set);
 
 #ifdef LATENCY
-				ticks start_tick, end_tick;
+		ticks start_tick, end_tick;
+		int NUM_SAMPLES_PER_THREAD = NUM_SAMPLES / CUR_NUM_THREADS;
 #endif
-				//struct timespec looptime, loopend;
-#ifdef THROUGHPUT
-				struct timespec tstart, tend;
-#endif
-				int NUM_SAMPLES_PER_THREAD = NUM_SAMPLES/CUR_NUM_THREADS;
-				pthread_barrier_wait(&barrier);
-#ifdef VERBOSE
-				printf("Enqueue thread woke up\n");
-#endif
-#ifdef THROUGHPUT
-//				double NUM_SAMPLES_PER_THREAD = 0.0;
-//
-//				int count = 1;
-//				double diff = 0.0;
-				NUM_SAMPLES_PER_THREAD = NUM_SAMPLES;
-				clock_gettime(CLOCK_MONOTONIC, &tstart);
-//				clock_gettime(CLOCK_MONOTONIC, &looptime);
-//				while(diff <= ENQUEUE_SECONDS)
-//				{
-#endif
-					for (int i = 0; i < NUM_SAMPLES_PER_THREAD; i++)
-					{
-#ifdef LATENCY
-						start_tick = getticks();
-#endif
-						EnqueueMultiple((atom)(i+1), queues[my_cpu], my_cpu);
-#ifdef LATENCY
-						end_tick = getticks();
-						pthread_mutex_lock(&lock);
-						enqueuetimestamp[numEnqueue] = (end_tick-start_tick);
-						__sync_fetch_and_add(&numEnqueue, 1);
-						pthread_mutex_unlock(&lock);
-#endif
-//#ifdef THROUGHPUT
-//						count++;
-//						if(count % 100000 == 0)
-//						{
-//							clock_gettime(CLOCK_MONOTONIC, &loopend);
-//							NUM_SAMPLES_PER_THREAD += count;
-//							count = 1;
-//							diff = ( loopend.tv_sec - looptime.tv_sec );
-//						}
-//#endif
-					}
 
 #ifdef THROUGHPUT
-					clock_gettime(CLOCK_MONOTONIC, &tend);
-					pthread_mutex_lock(&lock);
-					double elapsed = ( tend.tv_sec - tstart.tv_sec ) + (( tend.tv_nsec - tstart.tv_nsec )/ 1E9);
-					printf("elapsed time: %lf\n", elapsed);
-					printf("Num tasks run: %d\n", NUM_SAMPLES_PER_THREAD);
-					enqueuethroughput += ((NUM_SAMPLES_PER_THREAD*1.0)/elapsed);
-					ENQUEUE_SAMPLES += NUM_SAMPLES_PER_THREAD;
-					pthread_mutex_unlock(&lock);
+		struct timespec tstart, tend, looptime, loopend;
+		int i = 1;
+		long int NUM_SAMPLES_PER_THREAD = 0;
+		double diff = 0.0;
+#endif
+
+		pthread_barrier_wait(&barrier);
+
+#ifdef THROUGHPUT
+		clock_gettime(CLOCK_MONOTONIC, &looptime);
+		clock_gettime(CLOCK_MONOTONIC, &tstart);
+		while(diff <= ENQUEUE_SECONDS)
+		{
+#endif
+#ifdef LATENCY
+			for (int i = 0; i < NUM_SAMPLES_PER_THREAD; i++)
+			{
+				start_tick = getticks();
+#endif
+				EnqueueMultiple((atom)(i+1), queues[my_cpu], my_cpu);
+#ifdef LATENCY
+				end_tick = getticks();
+				pthread_mutex_lock(&lock);
+				enqueuetimestamp[numEnqueue] = end_tick - start_tick;
+				__sync_fetch_and_add(&numEnqueue, 1);
+				pthread_mutex_unlock(&lock);
+#endif
+#ifdef THROUGHPUT
+				i++;
+				if(i % 10000 == 0)
+				{
+					clock_gettime(CLOCK_MONOTONIC, &loopend);
+					NUM_SAMPLES_PER_THREAD += i;
+					i = 1;
+					diff = ( loopend.tv_sec - looptime.tv_sec );
+				}
+#endif
+			}
+
+#ifdef THROUGHPUT
+			clock_gettime(CLOCK_MONOTONIC, &tend);
+			pthread_mutex_lock(&lock);
+			double elapsed = ( tend.tv_sec - tstart.tv_sec ) + (( tend.tv_nsec - tstart.tv_nsec )/ 1E9);
+			printf("elapsed time: %lf\n", elapsed);
+			printf("Num enqueue tasks run: %d\n", NUM_SAMPLES_PER_THREAD);
+			enqueuethroughput += ((NUM_SAMPLES_PER_THREAD*1.0)/elapsed);
+			ENQUEUE_SAMPLES += NUM_SAMPLES_PER_THREAD;
+			pthread_mutex_unlock(&lock);
 #endif
 
 					return 0;
