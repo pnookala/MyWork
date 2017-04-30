@@ -70,8 +70,8 @@ static int numEnqueue = 0;
 static int numDequeue = 0;
 static int CUR_NUM_THREADS = 0;
 static int NUM_QUEUES = 1;
-static int ENQUEUE_SAMPLES = 0;
-static int DEQUEUE_SAMPLES = 0;
+static long long int ENQUEUE_SAMPLES = 0;
+static long long int DEQUEUE_SAMPLES = 0;
 
 volatile int numEnqueueThreadsCreated = 0, numDequeueThreadsCreated = 0;
 pthread_cond_t cond_var = PTHREAD_COND_INITIALIZER;
@@ -214,7 +214,7 @@ void *worker_handler(void * in) {
 		pthread_mutex_lock(&lock);
 		double elapsed = ( tend.tv_sec - tstart.tv_sec ) + (( tend.tv_nsec - tstart.tv_nsec )/ 1E9);
 		printf("elapsed time: %lf\n", elapsed);
-		printf("Num tasks run: %d\n", NUM_SAMPLES_PER_THREAD);
+		printf("Num dequeue tasks run: %d\n", NUM_SAMPLES_PER_THREAD);
 		dequeuethroughput += ((NUM_SAMPLES_PER_THREAD*1.0)/elapsed);
 		DEQUEUE_SAMPLES += NUM_SAMPLES_PER_THREAD;
 		pthread_mutex_unlock(&lock);
@@ -286,7 +286,7 @@ void *worker_handler(void * in) {
 			pthread_mutex_lock(&lock);
 			double elapsed = ( tend.tv_sec - tstart.tv_sec ) + (( tend.tv_nsec - tstart.tv_nsec )/ 1E9);
 			printf("elapsed time: %lf\n", elapsed);
-			printf("Num tasks run: %d\n", NUM_SAMPLES_PER_THREAD);
+			printf("Num enqueue tasks run: %d\n", NUM_SAMPLES_PER_THREAD);
 			enqueuethroughput += ((NUM_SAMPLES_PER_THREAD*1.0)/elapsed);
 			ENQUEUE_SAMPLES += NUM_SAMPLES_PER_THREAD;
 			pthread_mutex_unlock(&lock);
