@@ -113,6 +113,10 @@ inline int EnqueueMultiple(atom elem, struct theQueue *q, int queueID)
 
 inline atom DequeueMultiple(struct theQueue *q, int queueID)
 {
+
+	if(((q->tail - MAX_SIZE) > 0 && (q->head == q->tail)))
+		return -1;
+
 	atom elem = 0;
     int cur_head = __sync_add_and_fetch(&q->head,1);
 
