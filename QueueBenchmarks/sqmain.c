@@ -30,6 +30,7 @@
 #include <urcu.h>		/* RCU flavor */
 #include <urcu/rculfqueue.h>	/* RCU Lock-free queue */
 #include <urcu/compiler.h>	/* For CAA_ARRAY_SIZE */
+#include "liblfds711.h"
 
 /*
  * Nodes populated into the queue.
@@ -582,6 +583,146 @@ void *worker_handler(void * in) {
 #endif
 					return 0;
 				}
+				void *bmm_worker_handler(void * in) {
+
+					struct lfds711_queue_bmm_state *qbmms = (struct lfds711_queue_bmm_state *) in;
+				#ifdef LATENCY
+					ticks start_tick, end_tick;
+					int NUM_SAMPLES_PER_THREAD = NUM_SAMPLES / CUR_NUM_THREADS;
+				#endif
+
+				#ifdef THROUGHPUT
+					struct timespec looptime, loopend;
+					struct timespec tstart, tend;
+				#endif
+
+					pthread_barrier_wait(&barrier);
+
+				#ifdef THROUGHPUT
+					long int NUM_SAMPLES_PER_THREAD = 0;
+					int count = 1;
+					double diff = 0.0;
+					clock_gettime(CLOCK_MONOTONIC, &looptime);
+					clock_gettime(CLOCK_MONOTONIC, &tstart);
+					int isempty = 0;
+					while(diff <= DEQUEUE_SECONDS && !isempty)
+					{
+				#endif
+				#ifdef LATENCY
+						for (int i = 0; i < NUM_SAMPLES_PER_THREAD; i++)
+						{
+							start_tick = getticks();
+				#endif
+							int ret = -1;
+							while(ret == -1)
+							{
+#ifdef THROUGHPUT
+								//printf("%d %d\n", qbmms->write_index, qbmms->read_index);
+								isempty = (qbmms->write_index > NUM_SAMPLES) && (qbmms->read_index == qbmms->write_index);
+								if(isempty) //queue is empty
+									break;
+#endif
+								lfds711_queue_bmm_dequeue( qbmms, NULL, &ret );
+							}
+							//printf("dequeued %d\n", ret);
+
+				#ifdef LATENCY
+							end_tick = getticks();
+							pthread_mutex_lock(&lock);
+							dequeuetimestamp[numDequeue] = (end_tick-start_tick);
+							__sync_fetch_and_add(&numDequeue, 1);
+							pthread_mutex_unlock(&lock);
+				#endif
+				#ifdef THROUGHPUT
+							count++;
+							if(count % 10000 == 0 || isempty)
+							{
+								clock_gettime(CLOCK_MONOTONIC, &loopend);
+								NUM_SAMPLES_PER_THREAD += count;
+								count = 1;
+								diff = ( loopend.tv_sec - looptime.tv_sec );
+							}
+				#endif
+						}
+
+				#ifdef THROUGHPUT
+						clock_gettime(CLOCK_MONOTONIC, &tend);
+						pthread_mutex_lock(&lock);
+						double elapsed = ( tend.tv_sec - tstart.tv_sec ) + (( tend.tv_nsec - tstart.tv_nsec )/ 1E9);
+						//printf("elapsed time: %lf\n", elapsed);
+						//printf("Num dequeue tasks run: %d\n", NUM_SAMPLES_PER_THREAD);
+						dequeuethroughput += ((NUM_SAMPLES_PER_THREAD*1.0)/elapsed);
+						DEQUEUE_SAMPLES += NUM_SAMPLES_PER_THREAD;
+						pthread_mutex_unlock(&lock);
+				#endif
+
+						return 0;
+
+					}
+
+					void *bmm_enqueue_handler(void * in)
+					{
+						struct lfds711_queue_bmm_state *qbmms = (struct lfds711_queue_bmm_state *) in;
+
+				#ifdef LATENCY
+						ticks start_tick, end_tick;
+						int NUM_SAMPLES_PER_THREAD = NUM_SAMPLES / CUR_NUM_THREADS;
+				#endif
+
+				#ifdef THROUGHPUT
+						struct timespec tstart, tend, looptime, loopend;
+						int i = 1;
+						long int NUM_SAMPLES_PER_THREAD = 0;
+						double diff = 0.0;
+				#endif
+
+						pthread_barrier_wait(&barrier);
+
+				#ifdef THROUGHPUT
+						clock_gettime(CLOCK_MONOTONIC, &looptime);
+						clock_gettime(CLOCK_MONOTONIC, &tstart);
+						while(diff <= ENQUEUE_SECONDS)
+						{
+				#endif
+				#ifdef LATENCY
+							for (int i = 0; i < NUM_SAMPLES_PER_THREAD; i++)
+							{
+								start_tick = getticks();
+				#endif
+								lfds711_queue_bmm_enqueue( qbmms, NULL, i );
+								//printf("enqueued %d\n", i);
+				#ifdef LATENCY
+								end_tick = getticks();
+								pthread_mutex_lock(&lock);
+								enqueuetimestamp[numEnqueue] = end_tick - start_tick;
+								__sync_fetch_and_add(&numEnqueue, 1);
+								pthread_mutex_unlock(&lock);
+				#endif
+				#ifdef THROUGHPUT
+								i++;
+								if(i % 10000 == 0)
+								{
+									clock_gettime(CLOCK_MONOTONIC, &loopend);
+									NUM_SAMPLES_PER_THREAD += i;
+									i = 1;
+									diff = ( loopend.tv_sec - looptime.tv_sec );
+								}
+				#endif
+							}
+
+				#ifdef THROUGHPUT
+							clock_gettime(CLOCK_MONOTONIC, &tend);
+							pthread_mutex_lock(&lock);
+							double elapsed = ( tend.tv_sec - tstart.tv_sec ) + (( tend.tv_nsec - tstart.tv_nsec )/ 1E9);
+							//printf("elapsed time: %lf\n", elapsed);
+							//printf("Num enqueue tasks run: %d\n", NUM_SAMPLES_PER_THREAD);
+							enqueuethroughput += ((NUM_SAMPLES_PER_THREAD*1.0)/elapsed);
+							ENQUEUE_SAMPLES += NUM_SAMPLES_PER_THREAD;
+							pthread_mutex_unlock(&lock);
+				#endif
+
+							return 0;
+						}
 #endif
 
 				void *basicenqueue_handler(void *_queue)
@@ -1261,19 +1402,24 @@ void *worker_handler(void * in) {
 							ck_ring_buffer_t *buf;
 							ck_ring_t *ring;
 
-							size = NUM_SAMPLES; //Hardcoded for benchmarking purposes
+//							size = NUM_SAMPLES; //Hardcoded for benchmarking purposes
+//
+//							buf = malloc(sizeof(ck_ring_buffer_t) * size);
+//							ring = malloc(sizeof(ck_ring_t) * size);
+//
+//							ck_ring_init(ring, size);
+//
+//							struct arg_struct args;
+//							args.ring = ring;
+//							args.buf = buf;
+							struct lfds711_queue_bmm_element qbmme[NUM_SAMPLES]; // TRD : must be a positive integer power of 2 (2, 4, 8, 16, etc)
+							struct lfds711_queue_bmm_state qbmms;
 
-							buf = malloc(sizeof(ck_ring_buffer_t) * size);
-							ring = malloc(sizeof(ck_ring_t) * size);
-
-							ck_ring_init(ring, size);
-
-							struct arg_struct args;
-							args.ring = ring;
-							args.buf = buf;
+							lfds711_queue_bmm_init_valid_on_current_logical_core( &qbmms, qbmme, NUM_SAMPLES, NULL );
 
 							enqueuetimestamp = (ticks *)malloc(sizeof(ticks)*NUM_SAMPLES);
 							dequeuetimestamp = (ticks *)malloc(sizeof(ticks)*NUM_SAMPLES);
+
 							for (int i=0;i<NUM_SAMPLES;i++)
 							{
 								enqueuetimestamp[i] = (ticks)0;
@@ -1292,8 +1438,10 @@ void *worker_handler(void * in) {
 
 							for (int i = 0; i < CUR_NUM_THREADS; i++)
 							{
-								pthread_create(&enqueue_threads[i], NULL, ck_enqueue_handler,(void *) &args);
-								pthread_create(&worker_threads[i], NULL, ck_worker_handler,(void *) &args);
+//								pthread_create(&enqueue_threads[i], NULL, ck_enqueue_handler,(void *) &args);
+//								pthread_create(&worker_threads[i], NULL, ck_worker_handler,(void *) &args);
+								pthread_create(&enqueue_threads[i], NULL, bmm_enqueue_handler,(void*) &qbmms);
+								pthread_create(&worker_threads[i], NULL, bmm_worker_handler,(void*) &qbmms);
 							}
 
 							for (int i = 0; i < CUR_NUM_THREADS; i++)
@@ -1302,12 +1450,14 @@ void *worker_handler(void * in) {
 								pthread_join(worker_threads[i], NULL);
 							}
 
-							printf("Failed Dequeues: %d\n", failed_ck_dequeues);
-							fprintf(afp, "Failed Dequeues: %d\n", failed_ck_dequeues);
+							//printf("Failed Dequeues: %d\n", failed_ck_dequeues);
+							//fprintf(afp, "Failed Dequeues: %d\n", failed_ck_dequeues);
 							ComputeSummary(queueType, CUR_NUM_THREADS, afp, rfp, rdtsc_overhead_ticks);
 
 							free(enqueuetimestamp);
 							free(dequeuetimestamp);
+
+							lfds711_queue_bmm_cleanup( &qbmms, NULL );
 						}
 						break;
 #endif
@@ -1633,6 +1783,7 @@ void *worker_handler(void * in) {
 						}
 						break;
 					default:
+
 						break;
 					}
 
