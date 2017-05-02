@@ -125,6 +125,20 @@ static __inline__ ticks getticks(void) {
 }
 #endif
 
+static __inline__ ticks getticks_cpuid(void)
+{
+	register unsigned a,d;
+	__asm__ __volatile__ (
+			"cpuid\n\t"
+			"rdtsc\n\t"
+			: "=a" (a),
+			  "=d" (d)
+			  :
+			  :"ebx", "ecx"
+			);
+	return (((uint64_t)d << 32) | a);
+}
+
 static __inline__ void cyclesleep(ticks numTicks)
 {
 	if(numTicks <= 0)
@@ -188,7 +202,7 @@ void *worker_handler(void * in) {
 #ifdef LATENCY
 		for (int i = 0; i < NUM_SAMPLES_PER_THREAD; i++)
 		{
-			start_tick = getticks();
+			start_tick = getticks_cpuid();//getticks();
 #endif
 			ret = Dequeue();
 #ifdef LATENCY
@@ -259,7 +273,7 @@ void *worker_handler(void * in) {
 #ifdef LATENCY
 			for (int i = 0; i < NUM_SAMPLES_PER_THREAD; i++)
 			{
-				start_tick = getticks();
+				start_tick = getticks_cpuid();//getticks();
 #endif
 				Enqueue((atom)i+1);
 #ifdef LATENCY
