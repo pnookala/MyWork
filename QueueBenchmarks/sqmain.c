@@ -357,6 +357,12 @@ void *worker_handler(void * in) {
 #ifdef LATENCY
 	ticks start_tick, end_tick;
 	int NUM_SAMPLES_PER_THREAD = NUM_SAMPLES / CUR_NUM_THREADS;
+	ticks *timestamp;
+		timestamp = (ticks *)malloc(sizeof(ticks)*NUM_SAMPLES_PER_THREAD);
+		for (int i=0;i<NUM_SAMPLES_PER_THREAD;i++)
+		{
+			timestamp[i] = (ticks)0;
+		}
 #endif
 
 #ifdef THROUGHPUT
@@ -387,10 +393,11 @@ void *worker_handler(void * in) {
 
 #ifdef LATENCY
 			end_tick = getticks();
-			pthread_mutex_lock(&lock);
-			dequeuetimestamp[numDequeue] = (end_tick-start_tick);
-			__sync_fetch_and_add(&numDequeue, 1);
-			pthread_mutex_unlock(&lock);
+			timestamp[i] = end_tick - start_tick;
+//			pthread_mutex_lock(&lock);
+//			dequeuetimestamp[numDequeue] = (end_tick-start_tick);
+//			__sync_fetch_and_add(&numDequeue, 1);
+//			pthread_mutex_unlock(&lock);
 #endif
 #ifdef THROUGHPUT
 			count++;
@@ -403,6 +410,15 @@ void *worker_handler(void * in) {
 			}
 #endif
 		}
+#ifdef LATENCY
+		ticks totalTicks = 0;
+		for (int i=0;i<NUM_SAMPLES_PER_THREAD;i++)
+			{
+				totalTicks += timestamp[i];
+			}
+
+			__sync_add_and_fetch(&dequeue_ticks,totalTicks);
+#endif
 
 #ifdef THROUGHPUT
 		clock_gettime(CLOCK_MONOTONIC, &tend);
@@ -433,6 +449,12 @@ void *worker_handler(void * in) {
 #ifdef LATENCY
 		ticks start_tick, end_tick;
 		int NUM_SAMPLES_PER_THREAD = NUM_SAMPLES / CUR_NUM_THREADS;
+		ticks *timestamp;
+			timestamp = (ticks *)malloc(sizeof(ticks)*NUM_SAMPLES_PER_THREAD);
+			for (int i=0;i<NUM_SAMPLES_PER_THREAD;i++)
+			{
+				timestamp[i] = (ticks)0;
+			}
 #endif
 
 #ifdef THROUGHPUT
@@ -458,10 +480,11 @@ void *worker_handler(void * in) {
 				EnqueueMultiple((atom)(i+1), queues[my_cpu], my_cpu);
 #ifdef LATENCY
 				end_tick = getticks();
-				pthread_mutex_lock(&lock);
-				enqueuetimestamp[numEnqueue] = end_tick - start_tick;
-				__sync_fetch_and_add(&numEnqueue, 1);
-				pthread_mutex_unlock(&lock);
+				timestamp[i] = end_tick - start_tick;
+//				pthread_mutex_lock(&lock);
+//				enqueuetimestamp[numEnqueue] = end_tick - start_tick;
+//				__sync_fetch_and_add(&numEnqueue, 1);
+//				pthread_mutex_unlock(&lock);
 #endif
 #ifdef THROUGHPUT
 				i++;
@@ -474,6 +497,16 @@ void *worker_handler(void * in) {
 				}
 #endif
 			}
+#ifdef LATENCY
+			ticks totalTicks = 0;
+		for (int i=0;i<NUM_SAMPLES_PER_THREAD;i++)
+			{
+				totalTicks += timestamp[i];
+			}
+
+			__sync_add_and_fetch(&enqueue_ticks,totalTicks);
+			//printf("e, %llu, %llu\n", enqueue_ticks, totalTicks);
+#endif
 
 #ifdef THROUGHPUT
 			clock_gettime(CLOCK_MONOTONIC, &tend);
@@ -638,6 +671,12 @@ void *worker_handler(void * in) {
 				#ifdef LATENCY
 					ticks start_tick, end_tick;
 					int NUM_SAMPLES_PER_THREAD = NUM_SAMPLES / CUR_NUM_THREADS;
+					ticks *timestamp;
+						timestamp = (ticks *)malloc(sizeof(ticks)*NUM_SAMPLES_PER_THREAD);
+						for (int i=0;i<NUM_SAMPLES_PER_THREAD;i++)
+						{
+							timestamp[i] = (ticks)0;
+						}
 				#endif
 
 				#ifdef THROUGHPUT
@@ -677,10 +716,11 @@ void *worker_handler(void * in) {
 
 				#ifdef LATENCY
 							end_tick = getticks();
-							pthread_mutex_lock(&lock);
-							dequeuetimestamp[numDequeue] = (end_tick-start_tick);
-							__sync_fetch_and_add(&numDequeue, 1);
-							pthread_mutex_unlock(&lock);
+							timestamp[i] = end_tick - start_tick;
+//							pthread_mutex_lock(&lock);
+//							dequeuetimestamp[numDequeue] = (end_tick-start_tick);
+//							__sync_fetch_and_add(&numDequeue, 1);
+//							pthread_mutex_unlock(&lock);
 				#endif
 				#ifdef THROUGHPUT
 							count++;
@@ -693,6 +733,16 @@ void *worker_handler(void * in) {
 							}
 				#endif
 						}
+#ifdef LATENCY
+		ticks totalTicks = 0;
+		for (int i=0;i<NUM_SAMPLES_PER_THREAD;i++)
+			{
+				totalTicks += timestamp[i];
+			}
+
+			__sync_add_and_fetch(&dequeue_ticks,totalTicks);
+			//printf("d, %llu, %llu\n", dequeue_ticks, totalTicks);
+#endif
 
 				#ifdef THROUGHPUT
 						clock_gettime(CLOCK_MONOTONIC, &tend);
@@ -716,6 +766,12 @@ void *worker_handler(void * in) {
 				#ifdef LATENCY
 						ticks start_tick, end_tick;
 						int NUM_SAMPLES_PER_THREAD = NUM_SAMPLES / CUR_NUM_THREADS;
+						ticks *timestamp;
+							timestamp = (ticks *)malloc(sizeof(ticks)*NUM_SAMPLES_PER_THREAD);
+							for (int i=0;i<NUM_SAMPLES_PER_THREAD;i++)
+							{
+								timestamp[i] = (ticks)0;
+							}
 				#endif
 
 				#ifdef THROUGHPUT
@@ -742,10 +798,11 @@ void *worker_handler(void * in) {
 								//printf("enqueued %d\n", i);
 				#ifdef LATENCY
 								end_tick = getticks();
-								pthread_mutex_lock(&lock);
+								/*pthread_mutex_lock(&lock);
 								enqueuetimestamp[numEnqueue] = end_tick - start_tick;
 								__sync_fetch_and_add(&numEnqueue, 1);
-								pthread_mutex_unlock(&lock);
+								pthread_mutex_unlock(&lock);*/
+								timestamp[i] = end_tick - start_tick;
 				#endif
 				#ifdef THROUGHPUT
 								i++;
@@ -758,6 +815,16 @@ void *worker_handler(void * in) {
 								}
 				#endif
 							}
+#ifdef LATENCY
+		ticks totalTicks = 0;
+		for (int i=0;i<NUM_SAMPLES_PER_THREAD;i++)
+			{
+				totalTicks += timestamp[i];
+			}
+
+			__sync_add_and_fetch(&enqueue_ticks,totalTicks);
+			//printf("d, %llu, %llu\n", dequeue_ticks, totalTicks);
+#endif
 
 				#ifdef THROUGHPUT
 							clock_gettime(CLOCK_MONOTONIC, &tend);
@@ -781,6 +848,12 @@ void *worker_handler(void * in) {
 
 #endif
 					int NUM_SAMPLES_PER_THREAD = NUM_SAMPLES / CUR_NUM_THREADS;
+					ticks *timestamp;
+						timestamp = (ticks *)malloc(sizeof(ticks)*NUM_SAMPLES_PER_THREAD);
+						for (int i=0;i<NUM_SAMPLES_PER_THREAD;i++)
+						{
+							timestamp[i] = (ticks)0;
+						}
 
 #ifdef THROUGHPUT
 					struct timespec tstart, tend;
@@ -810,10 +883,11 @@ void *worker_handler(void * in) {
 						BasicEnqueue((atom)i+1);
 #ifdef LATENCY
 						end_tick = getticks();
-						pthread_mutex_lock(&lock);
-						enqueuetimestamp[numEnqueue] = (end_tick-start_tick);
-						__sync_fetch_and_add(&numEnqueue, 1);
-						pthread_mutex_unlock(&lock);
+						timestamp[i] = end_tick - start_tick;
+//						pthread_mutex_lock(&lock);
+//						enqueuetimestamp[numEnqueue] = (end_tick-start_tick);
+//						__sync_fetch_and_add(&numEnqueue, 1);
+//						pthread_mutex_unlock(&lock);
 #endif
 //#ifdef THROUGHPUT
 //						count++;
@@ -826,6 +900,16 @@ void *worker_handler(void * in) {
 //						}
 //#endif
 					}
+#ifdef LATENCY
+			ticks totalTicks = 0;
+		for (int i=0;i<NUM_SAMPLES_PER_THREAD;i++)
+			{
+				totalTicks += timestamp[i];
+			}
+
+			__sync_add_and_fetch(&enqueue_ticks,totalTicks);
+			//printf("e, %llu, %llu\n", enqueue_ticks, totalTicks);
+#endif
 
 #ifdef THROUGHPUT
 					clock_gettime(CLOCK_MONOTONIC, &tend);
@@ -848,6 +932,12 @@ void *worker_handler(void * in) {
 
 #endif
 					int NUM_SAMPLES_PER_THREAD = NUM_SAMPLES / CUR_NUM_THREADS;
+					ticks *timestamp;
+						timestamp = (ticks *)malloc(sizeof(ticks)*NUM_SAMPLES_PER_THREAD);
+						for (int i=0;i<NUM_SAMPLES_PER_THREAD;i++)
+						{
+							timestamp[i] = (ticks)0;
+						}
 #ifdef THROUGHPUT
 					//struct timespec looptime, loopend;
 					struct timespec tstart, tend;
@@ -876,10 +966,11 @@ void *worker_handler(void * in) {
 
 #ifdef LATENCY
 						end_tick = getticks();
-						pthread_mutex_lock(&lock);
-						dequeuetimestamp[numDequeue] = (end_tick-start_tick);
-						__sync_fetch_and_add(&numDequeue, 1);
-						pthread_mutex_unlock(&lock);
+						timestamp[i] = end_tick - start_tick;
+//						pthread_mutex_lock(&lock);
+//						dequeuetimestamp[numDequeue] = (end_tick-start_tick);
+//						__sync_fetch_and_add(&numDequeue, 1);
+//						pthread_mutex_unlock(&lock);
 #endif
 //#ifdef THROUGHPUT
 //						count++;
@@ -892,6 +983,16 @@ void *worker_handler(void * in) {
 //						}
 //#endif
 					}
+#ifdef LATENCY
+		ticks totalTicks = 0;
+		for (int i=0;i<NUM_SAMPLES_PER_THREAD;i++)
+			{
+				totalTicks += timestamp[i];
+			}
+
+			__sync_add_and_fetch(&dequeue_ticks,totalTicks);
+			//printf("d, %llu, %llu\n", dequeue_ticks, totalTicks);
+#endif
 
 #ifdef THROUGHPUT
 					clock_gettime(CLOCK_MONOTONIC, &tend);
@@ -913,7 +1014,12 @@ void *worker_handler(void * in) {
 					ticks start_tick, end_tick;
 
 #endif
-					int NUM_SAMPLES_PER_THREAD = NUM_SAMPLES / CUR_NUM_THREADS;
+					int NUM_SAMPLES_PER_THREAD = NUM_SAMPLES / CUR_NUM_THREADS;ticks *timestamp;
+					timestamp = (ticks *)malloc(sizeof(ticks)*NUM_SAMPLES_PER_THREAD);
+					for (int i=0;i<NUM_SAMPLES_PER_THREAD;i++)
+					{
+						timestamp[i] = (ticks)0;
+					}
 #ifdef THROUGHPUT
 					struct timespec tstart, tend;
 					//struct timespec looptime, loopend;
@@ -952,10 +1058,11 @@ void *worker_handler(void * in) {
 						rcu_read_unlock();
 #ifdef LATENCY
 						end_tick = getticks();
-						pthread_mutex_lock(&lock);
+						timestamp[i] = end_tick - start_tick;
+						/*pthread_mutex_lock(&lock);
 						enqueuetimestamp[numEnqueue] = (end_tick-start_tick);
 						__sync_fetch_and_add(&numEnqueue, 1);
-						pthread_mutex_unlock(&lock);
+						pthread_mutex_unlock(&lock);*/
 #endif
 //#ifdef THROUGHPUT
 //						count++;
@@ -968,6 +1075,16 @@ void *worker_handler(void * in) {
 //						}
 //#endif
 					}
+#ifdef LATENCY
+			ticks totalTicks = 0;
+		for (int i=0;i<NUM_SAMPLES_PER_THREAD;i++)
+			{
+				totalTicks += timestamp[i];
+			}
+
+			__sync_add_and_fetch(&enqueue_ticks,totalTicks);
+			//printf("e, %llu, %llu\n", enqueue_ticks, totalTicks);
+#endif
 
 #ifdef THROUGHPUT
 					clock_gettime(CLOCK_MONOTONIC, &tend);
@@ -989,6 +1106,12 @@ void *worker_handler(void * in) {
 					ticks start_tick, end_tick;
 #endif
 					int NUM_SAMPLES_PER_THREAD = NUM_SAMPLES / CUR_NUM_THREADS;
+					ticks *timestamp;
+						timestamp = (ticks *)malloc(sizeof(ticks)*NUM_SAMPLES_PER_THREAD);
+						for (int i=0;i<NUM_SAMPLES_PER_THREAD;i++)
+						{
+							timestamp[i] = (ticks)0;
+						}
 
 #ifdef THROUGHPUT
 
@@ -1037,10 +1160,11 @@ void *worker_handler(void * in) {
 
 #ifdef LATENCY
 						end_tick = getticks();
-						pthread_mutex_lock(&lock);
-						dequeuetimestamp[numDequeue] = (end_tick-start_tick);
-						__sync_fetch_and_add(&numDequeue, 1);
-						pthread_mutex_unlock(&lock);
+						timestamp[i] = end_tick - start_tick;
+//						pthread_mutex_lock(&lock);
+//						dequeuetimestamp[numDequeue] = (end_tick-start_tick);
+//						__sync_fetch_and_add(&numDequeue, 1);
+//						pthread_mutex_unlock(&lock);
 #endif
 //#ifdef THROUGHPUT
 //						count++;
@@ -1053,6 +1177,16 @@ void *worker_handler(void * in) {
 //						}
 //#endif
 					}
+#ifdef LATENCY
+					ticks totalTicks = 0;
+					for (int i=0;i<NUM_SAMPLES_PER_THREAD;i++)
+						{
+							totalTicks += timestamp[i];
+						}
+
+						__sync_add_and_fetch(&dequeue_ticks,totalTicks);
+						//printf("d, %llu, %llu\n", dequeue_ticks, totalTicks);
+			#endif
 
 #ifdef THROUGHPUT
 					clock_gettime(CLOCK_MONOTONIC, &tend);
@@ -1551,7 +1685,9 @@ void *worker_handler(void * in) {
 								pthread_join(worker_threads[i], NULL);
 							}
 
-							ComputeSummary(queueType, CUR_NUM_THREADS, afp, rfp, rdtsc_overhead_ticks);
+							//ComputeSummary(queueType, CUR_NUM_THREADS, afp, rfp, rdtsc_overhead_ticks);
+							printf("%s,%d,%llu,%llu,%d\n", "BQ", NUM_SAMPLES, enqueue_ticks/NUM_SAMPLES, dequeue_ticks/NUM_SAMPLES, CUR_NUM_THREADS);
+							fprintf(afp, "%s,%d,%llu,%llu,%d\n", "BQ", NUM_SAMPLES, enqueue_ticks/NUM_SAMPLES, dequeue_ticks/NUM_SAMPLES, CUR_NUM_THREADS);
 
 							free(enqueuetimestamp);
 							free(dequeuetimestamp);
@@ -1603,7 +1739,9 @@ void *worker_handler(void * in) {
 								pthread_join(worker_threads[i], NULL);
 							}
 
-							ComputeSummary(queueType, CUR_NUM_THREADS, afp, rfp, rdtsc_overhead_ticks);
+							//ComputeSummary(queueType, CUR_NUM_THREADS, afp, rfp, rdtsc_overhead_ticks);
+							printf("%s,%d,%llu,%llu,%d\n", "MSQ", NUM_SAMPLES, enqueue_ticks/NUM_SAMPLES, dequeue_ticks/NUM_SAMPLES, CUR_NUM_THREADS);
+							fprintf(afp, "%s,%d,%llu,%llu,%d\n", "MSQ", NUM_SAMPLES, enqueue_ticks/NUM_SAMPLES, dequeue_ticks/NUM_SAMPLES, CUR_NUM_THREADS);
 
 							free(enqueuetimestamp);
 							free(dequeuetimestamp);
@@ -1655,7 +1793,9 @@ void *worker_handler(void * in) {
 								pthread_join(worker_threads[i], NULL);
 							}
 
-							ComputeSummary(queueType, CUR_NUM_THREADS, afp, rfp, rdtsc_overhead_ticks);
+							//ComputeSummary(queueType, CUR_NUM_THREADS, afp, rfp, rdtsc_overhead_ticks);
+							printf("%s,%d,%llu,%llu,%d\n", "RCU", NUM_SAMPLES, enqueue_ticks/NUM_SAMPLES, dequeue_ticks/NUM_SAMPLES, CUR_NUM_THREADS);
+							fprintf(afp, "%s,%d,%llu,%llu,%d\n", "RCU", NUM_SAMPLES, enqueue_ticks/NUM_SAMPLES, dequeue_ticks/NUM_SAMPLES, CUR_NUM_THREADS);
 
 							free(enqueuetimestamp);
 							free(dequeuetimestamp);
