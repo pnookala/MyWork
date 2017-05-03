@@ -239,7 +239,7 @@ void *worker_handler(void * in) {
 			}
 
 			__sync_add_and_fetch(&dequeue_ticks,totalTicks);
-			printf("d, %llu, %llu\n", dequeue_ticks, totalTicks);
+			//printf("d, %llu, %llu\n", dequeue_ticks, totalTicks);
 #endif
 
 #ifdef THROUGHPUT
@@ -327,7 +327,7 @@ void *worker_handler(void * in) {
 			}
 
 			__sync_add_and_fetch(&enqueue_ticks,totalTicks);
-			printf("e, %llu, %llu\n", enqueue_ticks, totalTicks);
+			//printf("e, %llu, %llu\n", enqueue_ticks, totalTicks);
 #endif
 
 #ifdef THROUGHPUT
@@ -1220,6 +1220,7 @@ void *worker_handler(void * in) {
 					printf("Average Enqueue Time (ns): %lf\n", enqueueAvgTime);
 					printf("Average Dequeue Time (ns): %lf\n", dequeueAvgTime);
 
+					printf("%s,%d,%llu,%llu,%d\n", "Squeue", NUM_SAMPLES, enqueue_ticks/NUM_SAMPLES, dequeue_ticks/NUM_SAMPLES, CUR_NUM_THREADS);
 					fprintf(afp, "%d %d %d %d %ld %ld %ld %ld %lf %lf %ld %ld %lf %lf %lf %lf %lf %lf\n",type, numThreads, numEnqueue, numDequeue, enqueuetickMin, dequeuetickMin, enqueuetickMax, dequeuetickMax, tickEnqueueAverage, tickDequeueAverage, enqueuetickmedian, dequeuetickmedian, enqueueMinTime, dequeueMinTime, enqueueMaxTime, dequeueMaxTime, enqueueAvgTime, dequeueAvgTime);
 #endif
 #ifdef THROUGHPUT
