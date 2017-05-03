@@ -66,6 +66,7 @@ typedef long unsigned int ticks;
 #define DEQUEUE_SECONDS 3.0
 
 ticks *enqueuetimestamp, *dequeuetimestamp;
+static ticks dequeue_ticks = 0, enqueue_ticks = 0;
 
 static int numEnqueue = 0;
 static int numDequeue = 0;
@@ -178,6 +179,12 @@ void *worker_handler(void * in) {
 #ifdef LATENCY
 	ticks start_tick, end_tick;
 	int NUM_SAMPLES_PER_THREAD = NUM_SAMPLES / CUR_NUM_THREADS;
+	ticks *timestamp;
+	timestamp = (ticks *)malloc(sizeof(ticks)*NUM_SAMPLES_PER_THREAD);
+	for (int i=0;i<NUM_SAMPLES_PER_THREAD;i++)
+	{
+		timestamp[i] = (ticks)0;
+	}
 #endif
 
 #ifdef THROUGHPUT
@@ -202,15 +209,16 @@ void *worker_handler(void * in) {
 #ifdef LATENCY
 		for (int i = 0; i < NUM_SAMPLES_PER_THREAD; i++)
 		{
-			start_tick = getticks_cpuid();//getticks();
+			start_tick = getticks();
 #endif
 			ret = Dequeue();
 #ifdef LATENCY
 			end_tick = getticks();
-			pthread_mutex_lock(&lock);
+			/*pthread_mutex_lock(&lock);
 			dequeuetimestamp[numDequeue] = (end_tick-start_tick);
 			__sync_fetch_and_add(&numDequeue, 1);
-			pthread_mutex_unlock(&lock);
+			pthread_mutex_unlock(&lock);*/
+			timestamp[i] = end_tick - start_tick;
 #endif
 #ifdef THROUGHPUT
 			count++;
@@ -223,6 +231,16 @@ void *worker_handler(void * in) {
 			}
 #endif
 		}
+#ifdef LATENCY
+		ticks totalTicks = 0;
+		for (int i=0;i<NUM_SAMPLES_PER_THREAD;i++)
+			{
+				totalTicks += timestamp[i];
+			}
+
+			__sync_add_and_fetch(&dequeue_ticks,totalTicks);
+			printf("d, %llu, %llu\n", dequeue_ticks, totalTicks);
+#endif
 
 #ifdef THROUGHPUT
 		clock_gettime(CLOCK_MONOTONIC, &tend);
@@ -253,6 +271,12 @@ void *worker_handler(void * in) {
 #ifdef LATENCY
 		ticks start_tick, end_tick;
 		int NUM_SAMPLES_PER_THREAD = NUM_SAMPLES / CUR_NUM_THREADS;
+		ticks *timestamp;
+		timestamp = (ticks *)malloc(sizeof(ticks)*NUM_SAMPLES_PER_THREAD);
+		for (int i=0;i<NUM_SAMPLES_PER_THREAD;i++)
+		{
+			timestamp[i] = (ticks)0;
+		}
 #endif
 
 #ifdef THROUGHPUT
@@ -273,15 +297,16 @@ void *worker_handler(void * in) {
 #ifdef LATENCY
 			for (int i = 0; i < NUM_SAMPLES_PER_THREAD; i++)
 			{
-				start_tick = getticks_cpuid();//getticks();
+				start_tick = getticks();
 #endif
 				Enqueue((atom)i+1);
 #ifdef LATENCY
 				end_tick = getticks();
-				pthread_mutex_lock(&lock);
+				/*pthread_mutex_lock(&lock);
 				enqueuetimestamp[numEnqueue] = end_tick - start_tick;
 				__sync_fetch_and_add(&numEnqueue, 1);
-				pthread_mutex_unlock(&lock);
+				pthread_mutex_unlock(&lock);*/
+				timestamp[i] = end_tick - start_tick;
 #endif
 #ifdef THROUGHPUT
 				i++;
@@ -294,6 +319,16 @@ void *worker_handler(void * in) {
 				}
 #endif
 			}
+#ifdef LATENCY
+			ticks totalTicks = 0;
+		for (int i=0;i<NUM_SAMPLES_PER_THREAD;i++)
+			{
+				totalTicks += timestamp[i];
+			}
+
+			__sync_add_and_fetch(&enqueue_ticks,totalTicks);
+			printf("e, %llu, %llu\n", enqueue_ticks, totalTicks);
+#endif
 
 #ifdef THROUGHPUT
 			clock_gettime(CLOCK_MONOTONIC, &tend);
@@ -1074,6 +1109,8 @@ void *worker_handler(void * in) {
 					enqueuethroughput = 0;
 					DEQUEUE_SAMPLES = 0;
 					ENQUEUE_SAMPLES = 0;
+					dequeue_ticks = 0;
+					enqueue_ticks = 0;
 #ifndef PHI
 					failed_ck_dequeues = 0;
 #endif
@@ -1402,14 +1439,15 @@ void *worker_handler(void * in) {
 								pthread_join(worker_threads[i], NULL);
 							}
 
-							ComputeSummary(queueType, CUR_NUM_THREADS, afp, rfp, rdtsc_overhead_ticks);
+							//ComputeSummary(queueType, CUR_NUM_THREADS, afp, rfp, rdtsc_overhead_ticks);
+							printf("%s,%d,%llu,%llu,%d\n", "Squeue", NUM_SAMPLES, enqueue_ticks/NUM_SAMPLES, dequeue_ticks/NUM_SAMPLES, CUR_NUM_THREADS);
 
 							free(enqueuetimestamp);
 							free(dequeuetimestamp);
 						}
 						break;
 #ifndef PHI
-					case 2: //Concurrency Kit
+					/*case 2: //Concurrency Kit
 						for (int k = 0; k < threadCount; k++)
 						{
 							ResetCounters();
@@ -1473,7 +1511,7 @@ void *worker_handler(void * in) {
 
 							lfds711_queue_bmm_cleanup( &qbmms, NULL );
 						}
-						break;
+						break;*/
 #endif
 					case 3: //Basic linux queue
 						for (int k = 0; k < threadCount; k++)
