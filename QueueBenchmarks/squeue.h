@@ -10,7 +10,7 @@
 
 #include <stdio.h>
 
-#define NUM_SAMPLES 14400000//262144//12000000 //2^23
+#define NUM_SAMPLES 16//14400000//262144//12000000 //2^23
 #define MAX_SIZE NUM_SAMPLES        // Define maximum length of the queue
 typedef int atom;
 
