@@ -1580,7 +1580,11 @@ void *worker_handler(void * in) {
 									printf("Main Thread on CPU %d\n", sched_getcpu());
 
 									CPU_ZERO(&set);
-									CPU_SET(0, &set);
+
+									for(int num=0;num < NUM_CPUS; num++)
+									{
+										CPU_SET(num, &set);
+									}
 
 									pthread_setaffinity_np(pthread_self(), sizeof(set), &set);
 
