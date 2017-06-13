@@ -86,6 +86,9 @@ pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 struct cds_lfq_queue_rcu myqueue;	/* Queue */
 static int failed_ck_dequeues = 0;
 
+//This should be global as it holds the total set of cores available on the machine.
+cpu_set_t set;
+
 static
 void free_node(struct rcu_head *head)
 {
@@ -168,14 +171,14 @@ static inline unsigned long getticks_phi()
 }
 
 void *worker_handler(void * in) {
-//	int my_cpu = (int) (long) in;
-//
+	int my_cpu = (int) (long) in;
+
 //	cpu_set_t set;
 //
 //	CPU_ZERO(&set);
-//	CPU_SET(my_cpu % NUM_CPUS, &set);
-//
-//	pthread_setaffinity_np(pthread_self(), sizeof(set), &set);
+	CPU_SET(my_cpu % NUM_CPUS, &set);
+
+	pthread_setaffinity_np(pthread_self(), sizeof(set), &set);
 
 	printf("Worker Thread on CPU %d\n", sched_getcpu());
 #ifdef LATENCY
@@ -265,14 +268,14 @@ void *worker_handler(void * in) {
 
 	void *enqueue_handler(void * in)
 	{
-//		int my_cpu = (int) (long) in;
-//
-//		cpu_set_t set;
-//
-//		CPU_ZERO(&set);
-//		CPU_SET(my_cpu % NUM_CPUS, &set);
-//
-//		pthread_setaffinity_np(pthread_self(), sizeof(set), &set);
+		int my_cpu = (int) (long) in;
+
+		//cpu_set_t set;
+
+		//CPU_ZERO(&set);
+		CPU_SET(my_cpu % NUM_CPUS, &set);
+
+		pthread_setaffinity_np(pthread_self(), sizeof(set), &set);
 		printf("Enqueue Thread on CPU %d\n", sched_getcpu());
 
 #ifdef LATENCY
@@ -1575,12 +1578,11 @@ void *worker_handler(void * in) {
 									enqueue_threads = (pthread_t *) malloc(sizeof(pthread_t) * CUR_NUM_THREADS);
 
 									printf("Main Thread on CPU %d\n", sched_getcpu());
-//									cpu_set_t set;
-//
-//									CPU_ZERO(&set);
-//									CPU_SET(0, &set);
-//
-//									pthread_setaffinity_np(pthread_self(), sizeof(set), &set);
+
+									CPU_ZERO(&set);
+									CPU_SET(0, &set);
+
+									pthread_setaffinity_np(pthread_self(), sizeof(set), &set);
 
 									//Set number of threads that will call the barrier_wait to total of enqueue and dequeue threads
 									pthread_barrier_init(&barrier, NULL, threads[k]);
@@ -1606,7 +1608,7 @@ void *worker_handler(void * in) {
 								}
 								break;
 #ifndef PHI
-							case 2: //Concurrency Kit or LIBLFDS
+							/*case 2: //Concurrency Kit or LIBLFDS
 								for (int k = 0; k < threadCount; k++)
 								{
 									ResetCounters();
@@ -1670,7 +1672,7 @@ void *worker_handler(void * in) {
 
 									lfds711_queue_bmm_cleanup( &qbmms, NULL );
 								}
-								break;
+								break;*/
 #endif
 							case 3: //Basic linux queue
 								for (int k = 0; k < threadCount; k++)
