@@ -86,9 +86,6 @@ pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 struct cds_lfq_queue_rcu myqueue;	/* Queue */
 static int failed_ck_dequeues = 0;
 
-//This should be global as it holds the total set of cores available on the machine.
-cpu_set_t set;
-
 static
 void free_node(struct rcu_head *head)
 {
@@ -173,14 +170,14 @@ static inline unsigned long getticks_phi()
 void *worker_handler(void * in) {
 	int my_cpu = (int) (long) in;
 
-//	cpu_set_t set;
-//
-//	CPU_ZERO(&set);
+	cpu_set_t set;
+
+	CPU_ZERO(&set);
 	CPU_SET(my_cpu % NUM_CPUS, &set);
 
 	pthread_setaffinity_np(pthread_self(), sizeof(set), &set);
 
-	printf("Worker Thread on CPU %d\n", sched_getcpu());
+	printf("Tried to pin to %d, Worker Thread on CPU %d\n", my_cpu, sched_getcpu());
 #ifdef LATENCY
 	ticks start_tick, end_tick;
 	int NUM_SAMPLES_PER_THREAD = NUM_SAMPLES / CUR_NUM_THREADS;
@@ -270,13 +267,13 @@ void *worker_handler(void * in) {
 	{
 		int my_cpu = (int) (long) in;
 
-		//cpu_set_t set;
+		cpu_set_t set;
 
-		//CPU_ZERO(&set);
+		CPU_ZERO(&set);
 		CPU_SET(my_cpu % NUM_CPUS, &set);
 
 		pthread_setaffinity_np(pthread_self(), sizeof(set), &set);
-		printf("Enqueue Thread on CPU %d\n", sched_getcpu());
+		printf("Tried to pin to %d, Enqueue Thread on CPU %d\n", my_cpu, sched_getcpu());
 
 #ifdef LATENCY
 		ticks start_tick, end_tick;
@@ -1579,12 +1576,9 @@ void *worker_handler(void * in) {
 
 									printf("Main Thread on CPU %d\n", sched_getcpu());
 
+									cpu_set_t set;
 									CPU_ZERO(&set);
-
-									for(int num=0;num < NUM_CPUS; num++)
-									{
-										CPU_SET(num, &set);
-									}
+									CPU_SET(0, &set);
 
 									pthread_setaffinity_np(pthread_self(), sizeof(set), &set);
 
@@ -1594,7 +1588,7 @@ void *worker_handler(void * in) {
 									for (int i = 0; i < CUR_NUM_THREADS; i++)
 									{
 										pthread_create(&enqueue_threads[i], NULL, enqueue_handler,(void*) (unsigned long) (i));
-										pthread_create(&worker_threads[i], NULL, worker_handler,(void*) (unsigned long) (i));
+										pthread_create(&worker_threads[i], NULL, worker_handler,(void*) (unsigned long) (i+1));
 									}
 
 									for (int i = 0; i < CUR_NUM_THREADS; i++)
