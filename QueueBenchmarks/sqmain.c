@@ -1588,7 +1588,7 @@ void *worker_handler(void * in) {
 									for (int i = 0; i < CUR_NUM_THREADS; i++)
 									{
 										pthread_create(&enqueue_threads[i], NULL, enqueue_handler,(void*) (unsigned long) (i));
-										pthread_create(&worker_threads[i], NULL, worker_handler,(void*) (unsigned long) (i+1));
+										pthread_create(&worker_threads[i], NULL, worker_handler,(void*) (unsigned long) (i + 1 + CUR_NUM_THREADS));
 									}
 
 									for (int i = 0; i < CUR_NUM_THREADS; i++)
