@@ -4,7 +4,7 @@ CFLAGS = -std=c99 -O2 -fopenmp -Wall -Wpedantic -DLATENCY -DCALIBRATE #-DTHROUGH
 RAWFLAGS = -std=c99 -O2 -fopenmp -Wall -Wpedantic -DLATENCY -DRAW -DCALIBRATE #-DTHROUGHPUT #-DVERBOSE #-DCALIBRATE
 THFLAGS = -std=c99 -O2 -fopenmp -Wall -Wpedantic -DTHROUGHPUT -DCALIBRATE #-DVERBOSE #-DCALIBRATE
 OBJECTS = squeue.o squeuemultiple.o basicqueue.o xtaskqueue.o sqmain.o
-LDFLAGS = -L/usr/local/lib -lrt -lpthread -lurcu-cds -lurcu -llfds711
+LDFLAGS = -L/usr/local/lib -lrt -lpthread -lurcu-cds -lurcu -llfds711 -lhwloc
 
 all:
 	$(CC) $(CFLAGS) -c squeue.c

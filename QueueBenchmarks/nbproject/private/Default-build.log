@@ -1,0 +1,83 @@
+gcc -g -std=c99 -O2 -fopenmp -Wall -Wpedantic -DLATENCY -DCALIBRATE  -c squeue.c
+gcc -g -std=c99 -O2 -fopenmp -Wall -Wpedantic -DLATENCY -DCALIBRATE  -c squeuemultiple.c
+In file included from squeuemultiple.h:12:0,
+                 from squeuemultiple.c:12:
+squeue.h:25:12: warning: inline function ‘isFull’ declared but never defined [enabled by default]
+ inline int isFull();                 // Return true if queue is full
+            ^
+squeue.h:24:12: warning: inline function ‘isEmpty’ declared but never defined [enabled by default]
+ inline int isEmpty();                // Return true if queue is empty
+            ^
+squeue.h:25:12: warning: inline function ‘isFull’ declared but never defined [enabled by default]
+ inline int isFull();                 // Return true if queue is full
+            ^
+squeue.h:24:12: warning: inline function ‘isEmpty’ declared but never defined [enabled by default]
+ inline int isEmpty();                // Return true if queue is empty
+            ^
+gcc -g -std=c99 -O2 -fopenmp -Wall -Wpedantic -DLATENCY -DCALIBRATE  -c basicqueue.c
+gcc -g -std=c99 -O2 -fopenmp -Wall -Wpedantic -DLATENCY -DCALIBRATE  -c xtaskqueue.c
+In file included from xtaskqueue.h:12:0,
+                 from xtaskqueue.c:13:
+squeue.h:25:12: warning: inline function ‘isFull’ declared but never defined [enabled by default]
+ inline int isFull();                 // Return true if queue is full
+            ^
+squeue.h:24:12: warning: inline function ‘isEmpty’ declared but never defined [enabled by default]
+ inline int isEmpty();                // Return true if queue is empty
+            ^
+squeue.h:25:12: warning: inline function ‘isFull’ declared but never defined [enabled by default]
+ inline int isFull();                 // Return true if queue is full
+            ^
+squeue.h:24:12: warning: inline function ‘isEmpty’ declared but never defined [enabled by default]
+ inline int isEmpty();                // Return true if queue is empty
+            ^
+gcc -g -std=c99 -O2 -fopenmp -Wall -Wpedantic -DLATENCY -DCALIBRATE  -c sqmain.c
+sqmain.c: In function ‘worker_handler’:
+sqmain.c:201:6: warning: variable ‘ret’ set but not used [-Wunused-but-set-variable]
+  int ret;
+      ^
+sqmain.c: In function ‘workermultiple_handler’:
+sqmain.c:388:8: warning: unused variable ‘ret’ [-Wunused-variable]
+    int ret;
+        ^
+sqmain.c: In function ‘ck_worker_handler’:
+sqmain.c:550:10: warning: unused variable ‘success’ [-Wunused-variable]
+      int success = 0;
+          ^
+sqmain.c: In function ‘bmm_worker_handler’:
+sqmain.c:732:9: warning: passing argument 3 of ‘lfds711_queue_bmm_dequeue’ from incompatible pointer type [enabled by default]
+         lfds711_queue_bmm_dequeue( qbmms, NULL, &ret );
+         ^
+In file included from /usr/local/include/liblfds711.h:23:0,
+                 from sqmain.c:33:
+/usr/local/include/liblfds711/lfds711_queue_bounded_manyproducer_manyconsumer.h:58:5: note: expected ‘void **’ but argument is of type ‘int *’
+ int lfds711_queue_bmm_dequeue( struct lfds711_queue_bmm_state *qbmms,
+     ^
+sqmain.c: In function ‘bmm_enqueue_handler’:
+sqmain.c:820:9: warning: passing argument 3 of ‘lfds711_queue_bmm_enqueue’ makes pointer from integer without a cast [enabled by default]
+         lfds711_queue_bmm_enqueue( qbmms, NULL, i );
+         ^
+In file included from /usr/local/include/liblfds711.h:23:0,
+                 from sqmain.c:33:
+/usr/local/include/liblfds711/lfds711_queue_bounded_manyproducer_manyconsumer.h:54:5: note: expected ‘void *’ but argument is of type ‘int’
+ int lfds711_queue_bmm_enqueue( struct lfds711_queue_bmm_state *qbmms,
+     ^
+sqmain.c: In function ‘ComputeSummary’:
+sqmain.c:1384:8: warning: format ‘%llu’ expects argument of type ‘long long unsigned int’, but argument 4 has type ‘ticks’ [-Wformat=]
+        printf("%s,%d,%llu,%llu,%d\n", "Squeue", NUM_SAMPLES, enqueue_ticks/NUM_SAMPLES, dequeue_ticks/NUM_SAMPLES, CUR_NUM_THREADS);
+        ^
+sqmain.c:1384:8: warning: format ‘%llu’ expects argument of type ‘long long unsigned int’, but argument 5 has type ‘ticks’ [-Wformat=]
+In file included from sqmain.c:23:0:
+sqmain.c: At top level:
+squeue.h:25:12: warning: inline function ‘isFull’ declared but never defined [enabled by default]
+ inline int isFull();                 // Return true if queue is full
+            ^
+squeue.h:24:12: warning: inline function ‘isEmpty’ declared but never defined [enabled by default]
+ inline int isEmpty();                // Return true if queue is empty
+            ^
+squeue.h:25:12: warning: inline function ‘isFull’ declared but never defined [enabled by default]
+ inline int isFull();                 // Return true if queue is full
+            ^
+squeue.h:24:12: warning: inline function ‘isEmpty’ declared but never defined [enabled by default]
+ inline int isEmpty();                // Return true if queue is empty
+            ^
+gcc -g -std=c99 -O2 -fopenmp -Wall -Wpedantic -DLATENCY -DCALIBRATE  squeue.o squeuemultiple.o basicqueue.o xtaskqueue.o sqmain.o -L/usr/local/lib -lrt -lpthread -lurcu-cds -lurcu -llfds711 -o sqmain
