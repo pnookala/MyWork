@@ -1,10 +1,10 @@
 CC = gcc -g
 #CC = icc -mmic -DPHI 	#use this for to make an executable for Phi
-CFLAGS = -std=c99 -O2 -fopenmp -Wall -Wpedantic -DLATENCY -DCALIBRATE #-DTHROUGHPUT #-DVERBOSE #-DCALIBRATE
+CFLAGS = -std=c99 -O2 -fopenmp -Wall -Wpedantic-DLATENCY -DCALIBRATE #-DTHROUGHPUT #-DVERBOSE #-DCALIBRATE
 RAWFLAGS = -std=c99 -O2 -fopenmp -Wall -Wpedantic -DLATENCY -DRAW -DCALIBRATE #-DTHROUGHPUT #-DVERBOSE #-DCALIBRATE
 THFLAGS = -std=c99 -O2 -fopenmp -Wall -Wpedantic -DTHROUGHPUT -DCALIBRATE #-DVERBOSE #-DCALIBRATE
 OBJECTS = squeue.o squeuemultiple.o basicqueue.o xtaskqueue.o sqmain.o
-LDFLAGS = -L/usr/local/lib -lrt -lpthread -lurcu-cds -lurcu -llfds711 -lhwloc -lxml2
+LDFLAGS = -L/usr/local/lib -lrt -lpthread -lurcu-cds -lurcu -llfds711 -lhwloc
 
 all:
 	$(CC) $(CFLAGS) -c squeue.c

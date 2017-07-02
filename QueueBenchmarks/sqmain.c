@@ -31,13 +31,17 @@
 #include <urcu/rculfqueue.h> /* RCU Lock-free queue */
 #include <urcu/compiler.h> /* For CAA_ARRAY_SIZE */
 #include "liblfds711.h"
+#ifdef HWLOC
 #include <hwloc.h>
 #include <hwloc/cpuset.h>
+#endif
 
 /*
  * Nodes populated into the queue.
  */
+#ifdef HWLOC
 static hwloc_topology_t topology = NULL; /* Topology object */
+#endif
 
 struct mynode {
     int value; /* Node content */
@@ -172,17 +176,7 @@ static inline unsigned long getticks_phi() {
 
 void *worker_handler(void * in) {
     int my_cpu = (int) (long) in;
-
-    /*
-        cpu_set_t set;
-
-        CPU_ZERO(&set);
-        CPU_SET(my_cpu % NUM_CPUS, &set);
- 
-        pthread_setaffinity_np(pthread_self(), sizeof (set), &set);
-        printf("Tried to pin to %d, Worker Thread on CPU %d\n", my_cpu, sched_getcpu());
-     */
-
+#ifdef HWLOC
     hwloc_obj_t obj; /* Hwloc object    */
     hwloc_cpuset_t cpuset; /* HwLoc cpuset    */
     obj = hwloc_get_obj_by_type(topology, HWLOC_OBJ_CORE, my_cpu % NUM_CPUS);
@@ -194,6 +188,16 @@ void *worker_handler(void * in) {
     char *str = NULL;
     hwloc_cpuset_asprintf(&str, obj->cpuset);
     printf("Thread bound to cpuset %s\n", str);
+#else
+
+    cpu_set_t set;
+
+    CPU_ZERO(&set);
+    CPU_SET(my_cpu % NUM_CPUS, &set);
+
+    pthread_setaffinity_np(pthread_self(), sizeof (set), &set);
+    printf("Tried to pin to %d, Worker Thread on CPU %d\n", my_cpu, sched_getcpu());
+#endif
 
 #ifdef LATENCY
     ticks start_tick, end_tick;
@@ -279,16 +283,7 @@ void *worker_handler(void * in) {
     void *enqueue_handler(void * in) {
         int my_cpu = (int) (long) in;
 
-        /*
-                cpu_set_t set;
-
-                CPU_ZERO(&set);
-                CPU_SET(my_cpu % NUM_CPUS, &set);
-
-                pthread_setaffinity_np(pthread_self(), sizeof (set), &set);
-                printf("Tried to pin to %d, Enqueue Thread on CPU %d\n", my_cpu, sched_getcpu());
-         */
-
+#ifdef HWLOC
         hwloc_obj_t obj; /* Hwloc object    */
         hwloc_cpuset_t cpuset; /* HwLoc cpuset    */
         obj = hwloc_get_obj_by_type(topology, HWLOC_OBJ_CORE, my_cpu % NUM_CPUS);
@@ -300,6 +295,16 @@ void *worker_handler(void * in) {
         char *str = NULL;
         hwloc_cpuset_asprintf(&str, obj->cpuset);
         printf("Thread bound to cpuset %s\n", str);
+#else
+
+        cpu_set_t set;
+
+        CPU_ZERO(&set);
+        CPU_SET(my_cpu % NUM_CPUS, &set);
+
+        pthread_setaffinity_np(pthread_self(), sizeof (set), &set);
+        printf("Tried to pin to %d, Worker Thread on CPU %d\n", my_cpu, sched_getcpu());
+#endif
 
 #ifdef LATENCY
         ticks start_tick, end_tick;
@@ -379,7 +384,7 @@ void *worker_handler(void * in) {
 
         void *workermultiple_handler(void * in) {
             int my_cpu = (int) (long) in;
-
+#ifdef HWLOC
             hwloc_obj_t obj; /* Hwloc object    */
             hwloc_cpuset_t cpuset; /* HwLoc cpuset    */
             obj = hwloc_get_obj_by_type(topology, HWLOC_OBJ_CORE, my_cpu % NUM_CPUS);
@@ -391,6 +396,16 @@ void *worker_handler(void * in) {
             char *str = NULL;
             hwloc_cpuset_asprintf(&str, obj->cpuset);
             printf("Thread bound to cpuset %s\n", str);
+#else
+
+            cpu_set_t set;
+
+            CPU_ZERO(&set);
+            CPU_SET(my_cpu % NUM_CPUS, &set);
+
+            pthread_setaffinity_np(pthread_self(), sizeof (set), &set);
+            printf("Tried to pin to %d, Worker Thread on CPU %d\n", my_cpu, sched_getcpu());
+#endif
 
 #ifdef LATENCY
             ticks start_tick, end_tick;
@@ -476,6 +491,7 @@ void *worker_handler(void * in) {
             void *enqueuemultiple_handler(void * in) {
                 int my_cpu = (int) (long) in;
 
+#ifdef HWLOC
                 hwloc_obj_t obj; /* Hwloc object    */
                 hwloc_cpuset_t cpuset; /* HwLoc cpuset    */
                 obj = hwloc_get_obj_by_type(topology, HWLOC_OBJ_CORE, my_cpu % NUM_CPUS);
@@ -487,6 +503,16 @@ void *worker_handler(void * in) {
                 char *str = NULL;
                 hwloc_cpuset_asprintf(&str, obj->cpuset);
                 printf("Thread bound to cpuset %s\n", str);
+#else
+
+                cpu_set_t set;
+
+                CPU_ZERO(&set);
+                CPU_SET(my_cpu % NUM_CPUS, &set);
+
+                pthread_setaffinity_np(pthread_self(), sizeof (set), &set);
+                printf("Tried to pin to %d, Worker Thread on CPU %d\n", my_cpu, sched_getcpu());
+#endif
 
 #ifdef LATENCY
                 ticks start_tick, end_tick;
@@ -1535,7 +1561,7 @@ void *worker_handler(void * in) {
                             fprintf(afp, "QueueType NumThreads EnqueueSamples DequeueSamples EnqueueMin DequeueMin EnqueueMax DequeueMax EnqueueAverage DequeueAverage EnqueueMedian DequeueMedian EnqueueMinTime DequeueMinTime EnqueueMaxTime DequeueMaxTime EnqueueAverageTime DequeueAverageTime\n");
 #endif
 #endif
-
+#ifdef HWLOC
                             /* Allocate and initialize topology object.  */
                             hwloc_topology_init(&topology);
 
@@ -1556,6 +1582,17 @@ void *worker_handler(void * in) {
                             char *str = NULL;
                             hwloc_cpuset_asprintf(&str, obj->cpuset);
                             printf("Main thread bound to cpuset %s\n", str);
+#else
+                            //printf("Main Thread on CPU %d\n", sched_getcpu());
+
+
+                            cpu_set_t set;
+                            CPU_ZERO(&set);
+                            CPU_SET(0, &set);
+
+                            pthread_setaffinity_np(pthread_self(), sizeof (set), &set);
+
+#endif
                             //Execute benchmarks for various types of queues
                             switch (queueType) {
                                 case 1: //SQueue
@@ -1576,16 +1613,6 @@ void *worker_handler(void * in) {
 
                                         worker_threads = (pthread_t *) malloc(sizeof (pthread_t) * CUR_NUM_THREADS);
                                         enqueue_threads = (pthread_t *) malloc(sizeof (pthread_t) * CUR_NUM_THREADS);
-
-                                        //printf("Main Thread on CPU %d\n", sched_getcpu());
-
-                                        /*
-                                                                                cpu_set_t set;
-                                                                                CPU_ZERO(&set);
-                                                                                CPU_SET(0, &set);
-
-                                                                                pthread_setaffinity_np(pthread_self(), sizeof (set), &set);
-                                         */
 
                                         //Set number of threads that will call the barrier_wait to total of enqueue and dequeue threads
                                         pthread_barrier_init(&barrier, NULL, threads[k]);
