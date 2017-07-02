@@ -52,7 +52,6 @@
           <cTool>
             <preprocessorList>
               <Elem>CALIBRATE</Elem>
-              <Elem>HWLOC</Elem>
               <Elem>LATENCY</Elem>
             </preprocessorList>
           </cTool>
