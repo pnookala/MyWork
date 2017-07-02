@@ -32,6 +32,7 @@
 #include <urcu/compiler.h> /* For CAA_ARRAY_SIZE */
 #include "liblfds711.h"
 #include <hwloc.h>
+#include <hwloc/cpuset.h>
 
 /*
  * Nodes populated into the queue.
