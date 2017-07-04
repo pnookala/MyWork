@@ -1511,6 +1511,11 @@ void *worker_handler(void * in) {
                             }
                             int rdtsc_overhead_ticks = 0;
 
+//Start counter for ARM first.                            
+#ifdef ARM
+                            enable_ccnt_read(NULL);
+#endif
+
                             //Open file for storing data
 
                             FILE *rfp = fopen(fileName1, "a");
@@ -1622,10 +1627,6 @@ void *worker_handler(void * in) {
                             CPU_SET(0, &set);
 
                             pthread_setaffinity_np(pthread_self(), sizeof (set), &set);
-
-#ifdef ARM
-                            enable_ccnt_read(NULL);
-#endif
 
 #endif
                             //Execute benchmarks for various types of queues
