@@ -104,6 +104,8 @@ void free_node(struct rcu_head *head) {
 
 //An alternative way is to use rdtscp which will wait until all previous instructions have been executed before reading the counter; might be problematic on multi-core machines
 
+#ifndef ARM
+
 static __inline__ ticks getticks(void) {
     ticks tsc;
     __asm__ __volatile__(
@@ -116,6 +118,7 @@ static __inline__ ticks getticks(void) {
 
     return tsc;
 }
+#endif
 #endif
 
 #ifdef PHI
@@ -134,6 +137,21 @@ static __inline__ ticks getticks(void) {
 
     return tsc;
 }
+#endif
+
+#ifdef ARM
+
+static void enable_ccnt_read(void* data) {
+    // WRITE PMUSERENR = 1
+    __asm__ __volatile__ ("mcr p15, 0, %0, c9, c14, 0\n\t" : : "r" (1));
+}
+
+static __inline__ ticks getticks() {
+    volatile unsigned cc;
+    __asm__ __volatile__ ("mrc p15, 0, %0, c9, c13, 0" : "=r" (cc));
+    return cc;
+}
+
 #endif
 
 static __inline__ ticks getticks_cpuid(void) {
@@ -196,6 +214,9 @@ void *worker_handler(void * in) {
     CPU_SET(my_cpu % NUM_CPUS, &set);
 
     pthread_setaffinity_np(pthread_self(), sizeof (set), &set);
+#ifdef ARM
+    enable_ccnt_read(NULL);
+#endif
     printf("Tried to pin to %d, Worker Thread on CPU %d\n", my_cpu, sched_getcpu());
 #endif
 
@@ -303,6 +324,10 @@ void *worker_handler(void * in) {
         CPU_SET(my_cpu % NUM_CPUS, &set);
 
         pthread_setaffinity_np(pthread_self(), sizeof (set), &set);
+
+#ifdef ARM
+        enable_ccnt_read(NULL);
+#endif
         printf("Tried to pin to %d, Worker Thread on CPU %d\n", my_cpu, sched_getcpu());
 #endif
 
@@ -404,6 +429,9 @@ void *worker_handler(void * in) {
             CPU_SET(my_cpu % NUM_CPUS, &set);
 
             pthread_setaffinity_np(pthread_self(), sizeof (set), &set);
+#ifdef ARM
+            enable_ccnt_read(NULL);
+#endif
             printf("Tried to pin to %d, Worker Thread on CPU %d\n", my_cpu, sched_getcpu());
 #endif
 
@@ -511,6 +539,9 @@ void *worker_handler(void * in) {
                 CPU_SET(my_cpu % NUM_CPUS, &set);
 
                 pthread_setaffinity_np(pthread_self(), sizeof (set), &set);
+#ifdef ARM
+                enable_ccnt_read(NULL);
+#endif
                 printf("Tried to pin to %d, Worker Thread on CPU %d\n", my_cpu, sched_getcpu());
 #endif
 
@@ -1591,6 +1622,10 @@ void *worker_handler(void * in) {
                             CPU_SET(0, &set);
 
                             pthread_setaffinity_np(pthread_self(), sizeof (set), &set);
+
+#ifdef ARM
+                            enable_ccnt_read(NULL);
+#endif
 
 #endif
                             //Execute benchmarks for various types of queues
