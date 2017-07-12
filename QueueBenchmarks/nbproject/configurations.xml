@@ -9,7 +9,6 @@
       <in>xtaskqueue.c</in>
     </df>
     <df root="." name="1">
-      <in>SpmcTest.sh</in>
     </df>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
@@ -54,7 +53,6 @@
             <preprocessorList>
               <Elem>CALIBRATE</Elem>
               <Elem>LATENCY</Elem>
-              <Elem>VERBOSE</Elem>
             </preprocessorList>
           </cTool>
         </makeTool>
@@ -63,8 +61,6 @@
           <preBuildCommand></preBuildCommand>
         </preBuild>
       </makefileType>
-      <item path="SpmcTest.sh" ex="false" tool="3" flavor2="0">
-      </item>
       <item path="basicqueue.c" ex="false" tool="0" flavor2="3">
         <cTool flags="0">
         </cTool>
