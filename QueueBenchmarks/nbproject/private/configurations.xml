@@ -14,6 +14,7 @@
       <in>xtaskqueue.h</in>
     </df>
     <df root="." name="1">
+      <in>SpmcTest.sh</in>
     </df>
   </logicalFolder>
   <projectmakefile>Makefile</projectmakefile>
