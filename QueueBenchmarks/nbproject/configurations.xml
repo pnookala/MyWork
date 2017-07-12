@@ -53,6 +53,7 @@
             <preprocessorList>
               <Elem>CALIBRATE</Elem>
               <Elem>LATENCY</Elem>
+              <Elem>VERBOSE</Elem>
             </preprocessorList>
           </cTool>
         </makeTool>

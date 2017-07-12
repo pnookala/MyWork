@@ -1,4 +1,4 @@
-CC = gcc -g
+CC = gcc -g -DVERBOSE
 #CC = icc -mmic -DPHI 	#use this for to make an executable for Phi
 CFLAGS = -std=c99 -O2 -fopenmp -Wall -Wpedantic -DLATENCY -DCALIBRATE #-DTHROUGHPUT #-DVERBOSE #-DCALIBRATE
 RAWFLAGS = -std=c99 -O2 -fopenmp -Wall -Wpedantic -DLATENCY -DRAW -DCALIBRATE #-DTHROUGHPUT #-DVERBOSE #-DCALIBRATE

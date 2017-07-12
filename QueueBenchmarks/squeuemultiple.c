@@ -113,10 +113,15 @@ inline int EnqueueMultiple(atom elem, struct theQueue *q, int queueID)
 
 inline atom DequeueMultiple(struct theQueue *q, int queueID)
 {
+    printf("%d\n", queueID);
 
-	if(((q->tail - MAX_SIZE) > 0 && (q->head == q->tail)))
+	if(((q->tail - QUEUE_SIZE) > 0 && (q->head == q->tail)))
+        {
+#ifdef VERBOSE
+            printf("Queue %d empty\n", queueID);
+#endif
 		return -1;
-
+        }
 	atom elem = 0;
     int cur_head = __sync_add_and_fetch(&q->head,1);
 

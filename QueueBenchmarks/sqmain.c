@@ -797,7 +797,7 @@ void *worker_handler(void * in) {
 #ifdef THROUGHPUT
                     ret = DequeueMultiple(queues[my_cpu], my_cpu);
 #else
-                    DequeueMultiple(queues[i%NUM_QUEUES], (i%NUM_QUEUES));
+                    DequeueMultiple(queues[my_cpu], my_cpu);
 #endif
 
 #ifdef LATENCY
@@ -2293,7 +2293,7 @@ void *worker_handler(void * in) {
                                         //Start the consumer threads
                                         for (int i = 0; i < CUR_NUM_THREADS; i++) {
                                             
-                                            pthread_create(&worker_threads[i], NULL, workerspmc_handler, (void*) (unsigned long) (i+2));
+                                            pthread_create(&worker_threads[i], NULL, workerspmc_handler, (void*) (unsigned long) (i));
                                         }
 
                                         pthread_join(enqueue_thread, NULL);
