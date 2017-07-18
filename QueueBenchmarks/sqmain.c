@@ -1348,6 +1348,8 @@ void *worker_handler(void * in) {
 
                                     struct mynode *node;
 
+                                    rcu_register_thread();
+
                                     for (int i = 0; i < NUM_SAMPLES_PER_THREAD; i++) {
 #ifdef LATENCY
                                         start_tick = getticks();
@@ -1409,6 +1411,7 @@ void *worker_handler(void * in) {
                                     ENQUEUE_SAMPLES += NUM_SAMPLES_PER_THREAD;
                                     pthread_mutex_unlock(&lock);
 #endif
+                                    rcu_unregister_thread();
 
                                     return 0;
                                 }
@@ -1441,6 +1444,7 @@ void *worker_handler(void * in) {
                                     //					while(diff <= DEQUEUE_SECONDS)
                                     //					{
 #endif
+                                    rcu_register_thread();
 
                                     for (int i = 0; i < NUM_SAMPLES_PER_THREAD; i++) {
 
@@ -1449,7 +1453,7 @@ void *worker_handler(void * in) {
                                          * the oldest (first enqueued) to the newest (last enqueued).
                                          */
                                         struct cds_lfq_node_rcu *qnode;
-                                        struct mynode *node;
+                                        struct mynode *n;
 
 #ifdef LATENCY
                                         start_tick = getticks();
@@ -1462,12 +1466,13 @@ void *worker_handler(void * in) {
                                         qnode = cds_lfq_dequeue_rcu(&myqueue);
                                         rcu_read_unlock();
                                         /* Getting the container structure from the node */
-                                        node = caa_container_of(qnode, struct mynode, node);
+                                        if (qnode) {
+                                            n = caa_container_of(qnode, struct mynode, node);
 #ifdef VERBOSE
-                                        printf(" %d", node->value);
+                                            printf(" %d", node->value);
 #endif
-                                        call_rcu(&node->rcu_head, free_node);
-
+                                            call_rcu(&n->rcu_head, free_node);
+                                        }
 #ifdef LATENCY
                                         end_tick = getticks();
                                         timestamp[i] = end_tick - start_tick;
@@ -1476,6 +1481,7 @@ void *worker_handler(void * in) {
                                         //						__sync_fetch_and_add(&numDequeue, 1);
                                         //						pthread_mutex_unlock(&lock);
 #endif
+
                                         //#ifdef THROUGHPUT
                                         //						count++;
                                         //						if(count % 100000 == 0)
@@ -1513,6 +1519,7 @@ void *worker_handler(void * in) {
                                     pthread_mutex_unlock(&lock);
 #endif
 
+                                    rcu_unregister_thread();
                                     return 0;
                                 }
 #endif
@@ -2078,7 +2085,7 @@ void *worker_handler(void * in) {
                                                  * Each thread need using RCU read-side need to be explicitly
                                                  * registered.
                                                  */
-                                                rcu_register_thread();
+                                                //rcu_register_thread();
 
                                                 cds_lfq_init_rcu(&myqueue, call_rcu);
 
@@ -2110,7 +2117,7 @@ void *worker_handler(void * in) {
                                                     printf("Error destroying queue (non-empty)\n");
                                                 }
 
-                                                rcu_unregister_thread();
+                                                //rcu_unregister_thread();
                                                 return ret;
                                             }
                                             break;
