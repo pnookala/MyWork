@@ -53,7 +53,6 @@
             <preprocessorList>
               <Elem>CALIBRATE</Elem>
               <Elem>LATENCY</Elem>
-              <Elem>VERBOSE</Elem>
             </preprocessorList>
           </cTool>
         </makeTool>
@@ -64,6 +63,18 @@
       </makefileType>
       <item path="basicqueue.c" ex="false" tool="0" flavor2="3">
         <cTool flags="0">
+        </cTool>
+      </item>
+      <item path="handlers/spmc_squeue.c" ex="false" tool="0" flavor2="3">
+        <cTool flags="0">
+          <incDir>
+            <pElem>.</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>CALIBRATE</Elem>
+            <Elem>LATENCY</Elem>
+            <Elem>VERBOSE</Elem>
+          </preprocessorList>
         </cTool>
       </item>
       <item path="sqmain.c" ex="false" tool="0" flavor2="3">
