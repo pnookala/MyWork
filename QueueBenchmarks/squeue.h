@@ -10,7 +10,7 @@
 
 #include <stdio.h>
 
-#define NUM_SAMPLES 8//14400000//262144//14400000 //2^23
+#define NUM_SAMPLES 262144//14400000 //2^23
 #define MAX_SIZE NUM_SAMPLES        // Define maximum length of the queue
 typedef int atom;
 
@@ -21,8 +21,8 @@ void ClearQueue();            // Remove all items from the queue
 void PrintQueue();            // Print all items from the queue
 int Enqueue(atom elem);      // Enter an item in the queue
 atom Dequeue();             // Remove an item from the queue
-inline int isEmpty();                // Return true if queue is empty
-inline int isFull();                 // Return true if queue is full
+int isEmpty();                // Return true if queue is empty
+int isFull();                 // Return true if queue is full
 
 // Define TRUE and FALSE if they have not already been defined
 #ifndef FALSE

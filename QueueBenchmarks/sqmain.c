@@ -259,8 +259,9 @@ void *worker_handler(void * in) {
 #ifdef VERBOSE
     printf("Dequeue thread woke up\n");
 #endif
-    int ret;
+        
 #ifdef THROUGHPUT
+    int ret;
     long int NUM_SAMPLES_PER_THREAD = 0;
     int count = 1;
     double diff = 0.0;
@@ -272,7 +273,11 @@ void *worker_handler(void * in) {
         for (int i = 0; i < NUM_SAMPLES_PER_THREAD; i++) {
             start_tick = getticks();
 #endif
+#ifdef THROUGHPUT
             ret = Dequeue();
+#else
+            Dequeue();
+#endif
 #ifdef LATENCY
             end_tick = getticks();
             /*pthread_mutex_lock(&lock);
@@ -474,8 +479,9 @@ void *worker_handler(void * in) {
 #ifdef VERBOSE
             printf("Dequeue thread woke up\n");
 #endif
-            int ret;
+            
 #ifdef THROUGHPUT
+            int ret;
             long int NUM_SAMPLES_PER_THREAD = 0;
             int count = 1;
             double diff = 0.0;
@@ -645,7 +651,7 @@ void *worker_handler(void * in) {
                     return 0;
                 }
 
-                void enqueuespmc_handler(void * in) {
+                void *enqueuespmc_handler(void * in) {
                     int my_cpu = (int) (long) in;
 
 #ifdef HWLOC
@@ -842,7 +848,7 @@ void *worker_handler(void * in) {
                             struct entry entry;
                             ck_ring_buffer_t *buf = args->buf;
                             ck_ring_t *ring = args->ring;
-                            int success = 0;
+                            //int success = 0;
 #ifdef LATENCY
                             ticks start_tick, end_tick;
 #endif
@@ -1008,7 +1014,8 @@ void *worker_handler(void * in) {
                                 for (int i = 0; i < NUM_SAMPLES_PER_THREAD; i++) {
                                     start_tick = getticks();
 #endif
-                                    int ret = -1;
+                                    int ret;
+                                    ret = -1;
                                     while (ret == -1) {
 #ifdef THROUGHPUT
                                         //printf("%d %d\n", qbmms->write_index, qbmms->read_index);
@@ -1016,7 +1023,7 @@ void *worker_handler(void * in) {
                                         if (isempty) //queue is empty
                                             break;
 #endif
-                                        lfds711_queue_bmm_dequeue(qbmms, NULL, &ret);
+                                        lfds711_queue_bmm_dequeue(qbmms, NULL, (void**)&ret);
                                     }
                                     //printf("dequeued %d\n", ret);
 
@@ -1099,7 +1106,7 @@ void *worker_handler(void * in) {
                                     for (int i = 0; i < NUM_SAMPLES_PER_THREAD; i++) {
                                         start_tick = getticks();
 #endif
-                                        lfds711_queue_bmm_enqueue(qbmms, NULL, i);
+                                        lfds711_queue_bmm_enqueue(qbmms, NULL, &i);
                                         //printf("enqueued %d\n", i);
 #ifdef LATENCY
                                         end_tick = getticks();
@@ -1605,15 +1612,15 @@ void *worker_handler(void * in) {
                                     double tickEnqueueAverage = (totalEnqueueTicks / (numEnqueue));
                                     double tickDequeueAverage = (totalDequeueTicks / (numDequeue));
 
-                                    printf("Num threads: %d, Num enqueue samples: %d, Num dequeue samples: %d\n", numThreads, numEnqueue, numDequeue);
-                                    printf("Enqueue Min: %ld\n", enqueuetickMin);
-                                    printf("Dequeue Min: %ld\n", dequeuetickMin);
-
-                                    printf("Enqueue Max: %ld\n", enqueuetickMax);
-                                    printf("Dequeue Max: %ld\n", dequeuetickMax);
-
-                                    printf("Average Enqueue : %lf\n", tickEnqueueAverage);
-                                    printf("Average Dequeue : %lf\n", tickDequeueAverage);
+//                                    printf("Num threads: %d, Num enqueue samples: %d, Num dequeue samples: %d\n", numThreads, numEnqueue, numDequeue);
+//                                    printf("Enqueue Min: %ld\n", enqueuetickMin);
+//                                    printf("Dequeue Min: %ld\n", dequeuetickMin);
+//
+//                                    printf("Enqueue Max: %ld\n", enqueuetickMax);
+//                                    printf("Dequeue Max: %ld\n", dequeuetickMax);
+//
+//                                    printf("Average Enqueue : %lf\n", tickEnqueueAverage);
+//                                    printf("Average Dequeue : %lf\n", tickDequeueAverage);
 
                                     ticks enqueuetickmedian = 0, dequeuetickmedian = 0;
 
@@ -1633,8 +1640,8 @@ void *worker_handler(void * in) {
                                         dequeuetickmedian = numDequeueTicks[((numDequeue) / 2)];
                                     }
 
-                                    printf("Median Enqueue : %ld\n", enqueuetickmedian);
-                                    printf("Median Dequeue : %ld\n", dequeuetickmedian);
+//                                    printf("Median Enqueue : %ld\n", enqueuetickmedian);
+//                                    printf("Median Dequeue : %ld\n", dequeuetickmedian);
 
                                     double enqueueMinTime = ((enqueuetickMin) / clockFreq);
                                     double dequeueMinTime = ((dequeuetickMin) / clockFreq);
@@ -1643,16 +1650,17 @@ void *worker_handler(void * in) {
                                     double enqueueAvgTime = ((tickEnqueueAverage) / clockFreq);
                                     double dequeueAvgTime = ((tickDequeueAverage) / clockFreq);
 
-                                    printf("Enqueue Min Time (ns): %lf\n", enqueueMinTime);
-                                    printf("Dequeue Min Time (ns): %lf\n", dequeueMinTime);
-
-                                    printf("Enqueue Max Time (ns): %lf\n", enqueueMaxTime);
-                                    printf("Dequeue Max Time (ns): %lf\n", dequeueMaxTime);
-
-                                    printf("Average Enqueue Time (ns): %lf\n", enqueueAvgTime);
-                                    printf("Average Dequeue Time (ns): %lf\n", dequeueAvgTime);
-
-                                    printf("%s,%d,%llu,%llu,%d\n", "Squeue", NUM_SAMPLES, enqueue_ticks / NUM_SAMPLES, dequeue_ticks / NUM_SAMPLES, CUR_NUM_THREADS);
+//                                    printf("Enqueue Min Time (ns): %lf\n", enqueueMinTime);
+//                                    printf("Dequeue Min Time (ns): %lf\n", dequeueMinTime);
+//
+//                                    printf("Enqueue Max Time (ns): %lf\n", enqueueMaxTime);
+//                                    printf("Dequeue Max Time (ns): %lf\n", dequeueMaxTime);
+//
+//                                    printf("Average Enqueue Time (ns): %lf\n", enqueueAvgTime);
+//                                    printf("Average Dequeue Time (ns): %lf\n", dequeueAvgTime);
+//
+//                                    printf("%s,%d,%llu,%llu,%d\n", type, NUM_SAMPLES, enqueue_ticks / NUM_SAMPLES, dequeue_ticks / NUM_SAMPLES, CUR_NUM_THREADS);
+                                    printf("%d %d %d %d %ld %ld %ld %ld %lf %lf %ld %ld\n", type, numThreads, numEnqueue, numDequeue, enqueuetickMin, dequeuetickMin, enqueuetickMax, dequeuetickMax, tickEnqueueAverage, tickDequeueAverage, enqueuetickmedian, dequeuetickmedian);
                                     fprintf(afp, "%d %d %d %d %ld %ld %ld %ld %lf %lf %ld %ld %lf %lf %lf %lf %lf %lf\n", type, numThreads, numEnqueue, numDequeue, enqueuetickMin, dequeuetickMin, enqueuetickMax, dequeuetickMax, tickEnqueueAverage, tickDequeueAverage, enqueuetickmedian, dequeuetickmedian, enqueueMinTime, dequeueMinTime, enqueueMaxTime, dequeueMaxTime, enqueueAvgTime, dequeueAvgTime);
 #endif
 #ifdef THROUGHPUT
@@ -1912,23 +1920,23 @@ void *worker_handler(void * in) {
                                             }
                                             break;
 #ifndef PHI
-                                            /*case 2: //Concurrency Kit or LIBLFDS
+                                            case 2: //Concurrency Kit or LIBLFDS
                                                     for (int k = 0; k < threadCount; k++)
                                                     {
                                                             ResetCounters();
-                                                            ck_ring_buffer_t *buf;
-                                                            ck_ring_t *ring;
+                                                            //ck_ring_buffer_t *buf;
+                                                            //ck_ring_t *ring;
 
-                                                            //							size = NUM_SAMPLES; //Hardcoded for benchmarking purposes
+                                                            //size = NUM_SAMPLES; //Hardcoded for benchmarking purposes
                                                             //
-                                                            //							buf = malloc(sizeof(ck_ring_buffer_t) * size);
-                                                            //							ring = malloc(sizeof(ck_ring_t) * size);
+                                                            //buf = malloc(sizeof(ck_ring_buffer_t) * size);
+                                                            //ring = malloc(sizeof(ck_ring_t) * size);
                                                             //
-                                                            //							ck_ring_init(ring, size);
+                                                            //(ring, size);
                                                             //
-                                                            //							struct arg_struct args;
-                                                            //							args.ring = ring;
-                                                            //							args.buf = buf;
+                                                            //struct arg_struct args;
+                                                            //args.ring = ring;
+                                                            //args.buf = buf;
                                                             struct lfds711_queue_bmm_element qbmme[NUM_SAMPLES]; // TRD : must be a positive integer power of 2 (2, 4, 8, 16, etc)
                                                             struct lfds711_queue_bmm_state qbmms;
 
@@ -1976,7 +1984,7 @@ void *worker_handler(void * in) {
 
                                                             lfds711_queue_bmm_cleanup( &qbmms, NULL );
                                                     }
-                                                    break;*/
+                                                    break;
 #endif
                                         case 3: //Basic linux queue
                                             for (int k = 0; k < threadCount; k++) {
@@ -2309,7 +2317,7 @@ void *worker_handler(void * in) {
                                                 pthread_t enqueue_thread;
 
                                                 worker_threads = (pthread_t *) malloc(sizeof (pthread_t) * CUR_NUM_THREADS);
-                                                enqueue_thread = (pthread_t) malloc(sizeof (pthread_t));
+                                                enqueue_thread = (pthread_t) malloc(sizeof(pthread_t));
 
                                                 cpu_set_t set;
 
@@ -2321,11 +2329,11 @@ void *worker_handler(void * in) {
                                                 //Set number of threads that will call the barrier_wait to total of enqueue and dequeue threads
                                                 pthread_barrier_init(&barrier, NULL, (CUR_NUM_THREADS + 1));
                                                 //Start the producer thread
-                                                pthread_create(&enqueue_thread, NULL, enqueuespmc_handler, (void*) (unsigned long) (1));
+                                                pthread_create(&enqueue_thread, NULL, enqueuespmc_handler, (void*)(1));
                                                 //Start the consumer threads
                                                 for (int i = 0; i < CUR_NUM_THREADS; i++) {
 
-                                                    pthread_create(&worker_threads[i], NULL, workerspmc_handler, (void*) (unsigned long) (i));
+                                                    pthread_create(&worker_threads[i], NULL, workerspmc_handler, (void*)(unsigned long)(i));
                                                 }
 
                                                 pthread_join(enqueue_thread, NULL);
