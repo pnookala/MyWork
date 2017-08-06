@@ -30,12 +30,12 @@ make clean th
 ./sqmain 3 456,768,912,1024 BQLatencyRaw2 BQThroughputSummary
 
 make clean thwithtitle
-./sqmain 1 2 RCULatencyRaw2 RCUThroughputSummary
+./sqmain 5 2 RCULatencyRaw2 RCUThroughputSummary
 make clean th
-./sqmain 1 4,6,8,12,16 RCULatencyRaw2 RCUThroughputSummary
-./sqmain 1 24,32,48 RCULatencyRaw2 RCUThroughputSummary
-./sqmain 1 96,114,192,228,384 RCULatencyRaw2 RCUThroughputSummary
-./sqmain 1 456,768,912,1024 RCULatencyRaw2 RCUThroughputSummary
+./sqmain 5 4,6,8,12,16 RCULatencyRaw2 RCUThroughputSummary
+./sqmain 5 24,32,48 RCULatencyRaw2 RCUThroughputSummary
+./sqmain 5 96,114,192,228,384 RCULatencyRaw2 RCUThroughputSummary
+./sqmain 5 456,768,912,1024 RCULatencyRaw2 RCUThroughputSummary
 
 make clean thwithtitle
 ./sqmain 4 2 MSQLatencyRaw2 MSQThroughputSummary

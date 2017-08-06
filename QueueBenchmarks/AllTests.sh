@@ -33,20 +33,20 @@ make clean all
 ./sqmain 3 456,768,912,1024 BQLatencyRaw2 BQLatencySummary
 
 make clean all
-./sqmain 1 2 RCULatencyRaw2 RCULatencySummary
+./sqmain 5 2 RCULatencyRaw2 RCULatencySummary
 make clean all
-./sqmain 1 4 RCULatencyRaw2 RCULatencySummary
-./sqmain 1 6 RCULatencyRaw2 RCULatencySummary
-./sqmain 1 8 RCULatencyRaw2 RCULatencySummary
-./sqmain 1 12 RCULatencyRaw2 RCULatencySummary
-./sqmain 1 16 RCULatencyRaw2 RCULatencySummary
-./sqmain 1 24 RCULatencyRaw2 RCULatencySummary
-./sqmain 1 32 RCULatencyRaw2 RCULatencySummary
-./sqmain 1 48 RCULatencyRaw2 RCULatencySummary
+./sqmain 5 4 RCULatencyRaw2 RCULatencySummary
+./sqmain 5 6 RCULatencyRaw2 RCULatencySummary
+./sqmain 5 8 RCULatencyRaw2 RCULatencySummary
+./sqmain 5 12 RCULatencyRaw2 RCULatencySummary
+./sqmain 5 16 RCULatencyRaw2 RCULatencySummary
+./sqmain 5 24 RCULatencyRaw2 RCULatencySummary
+./sqmain 5 32 RCULatencyRaw2 RCULatencySummary
+./sqmain 5 48 RCULatencyRaw2 RCULatencySummary
 
 make clean all
-./sqmain 1 96,114,192,228,384 RCULatencyRaw2 RCULatencySummary
-./sqmain 1 456,768,912,1024 RCULatencyRaw2 RCULatencySummary
+./sqmain 5 96,114,192,228,384 RCULatencyRaw2 RCULatencySummary
+./sqmain 5 456,768,912,1024 RCULatencyRaw2 RCULatencySummary
 
 make clean all
 ./sqmain 4 2 MSQLatencyRaw2 MSQLatencySummary
