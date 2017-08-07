@@ -2297,9 +2297,10 @@ void *worker_handler(void * in) {
                                                 printf("Number of queues: %d\n", NUM_QUEUES);
                                                 pick = (int *) malloc(sizeof (int) * NUM_QUEUES);
 
+                                                printf("Random number distribution: ");
                                                 for (int z = 0; z < NUM_QUEUES; z++) {
                                                     pick[z] = rand_interval(0, NUM_QUEUES);
-                                                    printf("Picked %d ", pick[z]);
+                                                    printf("%d ", pick[z]);
                                                 }
 
                                                 printf("\n");

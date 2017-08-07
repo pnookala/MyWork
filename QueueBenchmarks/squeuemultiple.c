@@ -113,8 +113,6 @@ inline int EnqueueMultiple(atom elem, struct theQueue *q, int queueID)
 
 inline atom DequeueMultiple(struct theQueue *q, int queueID)
 {
-    printf("%d\n", queueID);
-
 	if(((q->tail - QUEUE_SIZE) > 0 && (q->head == q->tail)))
         {
 #ifdef VERBOSE
