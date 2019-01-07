@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <semaphore.h>
+#include <omp.h>
 
 typedef unsigned long long ticks;
 #define NUM_SAMPLES 1000001
@@ -18,7 +19,7 @@ static int NUM_THREADS = 1;
 
 
 static ticks dequeue_ticks = 0;
-
+omp_lock_t olock;
 
 //An alternative way is to use rdtscp which will wait until all previous instructions have been executed before reading the counter; might be problematic on multi-core machines
 static __inline__ ticks getticks_serial(void)
@@ -134,10 +135,15 @@ void *worker_handler(int run)
         }
         //no lock (no effect on cost asside from getticks() cost ~ 18 cycles)
         else if(run == 4) counter++;
-        else
+        else if(run == 5)
         {
         	localcounter++;
         }
+	else {
+		omp_set_lock(&olock);
+		counter++;
+		omp_unset_lock(&olock);
+	}
         
         timestamp[i] = getticks();
     }
@@ -220,13 +226,13 @@ int main(int argc, char *argv[])
     printf("Operation,NumSamples,CycleCount,NumThreads\n");
 
     
-    char *runName[] = {"atomic","semaphor","mutex","spinlock","vanila shared", "vanilla unique"};
-    
+    char *runName[] = {"atomic","semaphor","mutex","spinlock","vanila shared", "vanilla unique", "omp lock"};
+    omp_init_lock(&olock); 
     for (int k=1;k<=TOTAL_THREADS;k=k*2)
     {
         NUM_THREADS = k;
         
-    for (int run=0;run<6;run++)
+    for (int run=6;run<7;run++)
     {
         dequeue_ticks=0;
 

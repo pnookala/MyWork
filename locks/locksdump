@@ -1,0 +1,390 @@
+
+locks.o:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+0000000000000000 <worker_handler>:
+   0:	41 57                	push   %r15
+   2:	41 56                	push   %r14
+   4:	41 55                	push   %r13
+   6:	41 54                	push   %r12
+   8:	41 89 fc             	mov    %edi,%r12d
+   b:	55                   	push   %rbp
+   c:	53                   	push   %rbx
+   d:	48 83 ec 78          	sub    $0x78,%rsp
+  11:	8b 15 00 00 00 00    	mov    0x0(%rip),%edx        # 17 <worker_handler+0x17>
+  17:	64 48 8b 04 25 28 00 	mov    %fs:0x28,%rax
+  1e:	00 00 
+  20:	48 89 44 24 68       	mov    %rax,0x68(%rsp)
+  25:	31 c0                	xor    %eax,%eax
+  27:	85 d2                	test   %edx,%edx
+  29:	0f 84 a8 03 00 00    	je     3d7 <worker_handler+0x3d7>
+  2f:	bf 08 12 7a 00       	mov    $0x7a1208,%edi
+  34:	e8 00 00 00 00       	callq  39 <worker_handler+0x39>
+  39:	bf 07 12 7a 00       	mov    $0x7a1207,%edi
+  3e:	48 89 c3             	mov    %rax,%rbx
+  41:	e8 00 00 00 00       	callq  46 <worker_handler+0x46>
+  46:	49 89 c5             	mov    %rax,%r13
+  49:	0f 31                	rdtsc  
+  4b:	48 c1 e2 20          	shl    $0x20,%rdx
+  4f:	48 09 d0             	or     %rdx,%rax
+  52:	31 c9                	xor    %ecx,%ecx
+  54:	0f 1f 40 00          	nopl   0x0(%rax)
+  58:	48 c7 04 0b 00 00 00 	movq   $0x0,(%rbx,%rcx,1)
+  5f:	00 
+  60:	48 83 c1 08          	add    $0x8,%rcx
+  64:	48 81 f9 08 12 7a 00 	cmp    $0x7a1208,%rcx
+  6b:	75 eb                	jne    58 <worker_handler+0x58>
+  6d:	0f 31                	rdtsc  
+  6f:	48 c1 e2 20          	shl    $0x20,%rdx
+  73:	48 09 d0             	or     %rdx,%rax
+  76:	c7 44 24 1c 00 00 00 	movl   $0x0,0x1c(%rsp)
+  7d:	00 
+  7e:	48 c7 44 24 40 00 00 	movq   $0x0,0x40(%rsp)
+  85:	00 00 
+  87:	48 c7 44 24 48 00 00 	movq   $0x0,0x48(%rsp)
+  8e:	00 00 
+  90:	48 c7 44 24 50 00 00 	movq   $0x0,0x50(%rsp)
+  97:	00 00 
+  99:	48 c7 44 24 58 00 00 	movq   $0x0,0x58(%rsp)
+  a0:	00 00 
+  a2:	48 c7 44 24 60 00 00 	movq   $0x0,0x60(%rsp)
+  a9:	00 00 
+  ab:	0f 31                	rdtsc  
+  ad:	48 c1 e2 20          	shl    $0x20,%rdx
+  b1:	48 09 d0             	or     %rdx,%rax
+  b4:	31 ed                	xor    %ebp,%ebp
+  b6:	48 89 03             	mov    %rax,(%rbx)
+  b9:	45 31 ff             	xor    %r15d,%r15d
+  bc:	41 be 01 00 00 00    	mov    $0x1,%r14d
+  c2:	eb 3e                	jmp    102 <worker_handler+0x102>
+  c4:	0f 1f 40 00          	nopl   0x0(%rax)
+  c8:	41 83 fc 01          	cmp    $0x1,%r12d
+  cc:	74 5a                	je     128 <worker_handler+0x128>
+  ce:	41 83 fc 02          	cmp    $0x2,%r12d
+  d2:	74 74                	je     148 <worker_handler+0x148>
+  d4:	41 83 fc 03          	cmp    $0x3,%r12d
+  d8:	0f 84 92 00 00 00    	je     170 <worker_handler+0x170>
+  de:	41 83 fc 04          	cmp    $0x4,%r12d
+  e2:	74 34                	je     118 <worker_handler+0x118>
+  e4:	0f 31                	rdtsc  
+  e6:	48 c1 e2 20          	shl    $0x20,%rdx
+  ea:	48 09 d0             	or     %rdx,%rax
+  ed:	48 89 04 2b          	mov    %rax,(%rbx,%rbp,1)
+  f1:	48 83 c5 08          	add    $0x8,%rbp
+  f5:	48 81 fd 08 12 7a 00 	cmp    $0x7a1208,%rbp
+  fc:	0f 84 8e 00 00 00    	je     190 <worker_handler+0x190>
+ 102:	45 85 e4             	test   %r12d,%r12d
+ 105:	75 c1                	jne    c8 <worker_handler+0xc8>
+ 107:	f0 83 05 00 00 00 00 	lock addl $0x1,0x0(%rip)        # 10f <worker_handler+0x10f>
+ 10e:	01 
+ 10f:	eb d3                	jmp    e4 <worker_handler+0xe4>
+ 111:	0f 1f 80 00 00 00 00 	nopl   0x0(%rax)
+ 118:	83 05 00 00 00 00 01 	addl   $0x1,0x0(%rip)        # 11f <worker_handler+0x11f>
+ 11f:	eb c3                	jmp    e4 <worker_handler+0xe4>
+ 121:	0f 1f 80 00 00 00 00 	nopl   0x0(%rax)
+ 128:	48 8d 7c 24 20       	lea    0x20(%rsp),%rdi
+ 12d:	e8 00 00 00 00       	callq  132 <worker_handler+0x132>
+ 132:	48 8d 7c 24 20       	lea    0x20(%rsp),%rdi
+ 137:	83 05 00 00 00 00 01 	addl   $0x1,0x0(%rip)        # 13e <worker_handler+0x13e>
+ 13e:	e8 00 00 00 00       	callq  143 <worker_handler+0x143>
+ 143:	eb 9f                	jmp    e4 <worker_handler+0xe4>
+ 145:	0f 1f 00             	nopl   (%rax)
+ 148:	48 8d 7c 24 40       	lea    0x40(%rsp),%rdi
+ 14d:	e8 00 00 00 00       	callq  152 <worker_handler+0x152>
+ 152:	48 8d 7c 24 40       	lea    0x40(%rsp),%rdi
+ 157:	83 05 00 00 00 00 01 	addl   $0x1,0x0(%rip)        # 15e <worker_handler+0x15e>
+ 15e:	e8 00 00 00 00       	callq  163 <worker_handler+0x163>
+ 163:	e9 7c ff ff ff       	jmpq   e4 <worker_handler+0xe4>
+ 168:	e8 00 00 00 00       	callq  16d <worker_handler+0x16d>
+ 16d:	0f 1f 00             	nopl   (%rax)
+ 170:	44 89 f8             	mov    %r15d,%eax
+ 173:	f0 44 0f b1 74 24 1c 	lock cmpxchg %r14d,0x1c(%rsp)
+ 17a:	75 ec                	jne    168 <worker_handler+0x168>
+ 17c:	83 05 00 00 00 00 01 	addl   $0x1,0x0(%rip)        # 183 <worker_handler+0x183>
+ 183:	c7 44 24 1c 00 00 00 	movl   $0x0,0x1c(%rsp)
+ 18a:	00 
+ 18b:	e9 54 ff ff ff       	jmpq   e4 <worker_handler+0xe4>
+ 190:	48 8b 43 08          	mov    0x8(%rbx),%rax
+ 194:	48 2b 03             	sub    (%rbx),%rax
+ 197:	0f 88 78 02 00 00    	js     415 <worker_handler+0x415>
+ 19d:	f2 48 0f 2a c0       	cvtsi2sd %rax,%xmm0
+ 1a2:	f2 0f 10 0d 00 00 00 	movsd  0x0(%rip),%xmm1        # 1aa <worker_handler+0x1aa>
+ 1a9:	00 
+ 1aa:	66 0f 2e c1          	ucomisd %xmm1,%xmm0
+ 1ae:	0f 83 08 02 00 00    	jae    3bc <worker_handler+0x3bc>
+ 1b4:	f2 48 0f 2c e8       	cvttsd2si %xmm0,%rbp
+ 1b9:	49 89 ee             	mov    %rbp,%r14
+ 1bc:	31 f6                	xor    %esi,%esi
+ 1be:	31 c0                	xor    %eax,%eax
+ 1c0:	66 0f 28 d1          	movapd %xmm1,%xmm2
+ 1c4:	48 bf 00 00 00 00 00 	movabs $0x8000000000000000,%rdi
+ 1cb:	00 00 80 
+ 1ce:	eb 28                	jmp    1f8 <worker_handler+0x1f8>
+ 1d0:	f2 48 0f 2c c8       	cvttsd2si %xmm0,%rcx
+ 1d5:	48 01 c8             	add    %rcx,%rax
+ 1d8:	48 39 cd             	cmp    %rcx,%rbp
+ 1db:	49 89 4c 35 00       	mov    %rcx,0x0(%r13,%rsi,1)
+ 1e0:	48 0f 42 e9          	cmovb  %rcx,%rbp
+ 1e4:	49 39 ce             	cmp    %rcx,%r14
+ 1e7:	4c 0f 47 f1          	cmova  %rcx,%r14
+ 1eb:	48 83 c6 08          	add    $0x8,%rsi
+ 1ef:	48 81 fe 00 12 7a 00 	cmp    $0x7a1200,%rsi
+ 1f6:	74 48                	je     240 <worker_handler+0x240>
+ 1f8:	48 8b 54 33 08       	mov    0x8(%rbx,%rsi,1),%rdx
+ 1fd:	48 2b 14 33          	sub    (%rbx,%rsi,1),%rdx
+ 201:	78 1d                	js     220 <worker_handler+0x220>
+ 203:	f2 48 0f 2a c2       	cvtsi2sd %rdx,%xmm0
+ 208:	66 0f 2e c1          	ucomisd %xmm1,%xmm0
+ 20c:	72 c2                	jb     1d0 <worker_handler+0x1d0>
+ 20e:	f2 0f 5c c2          	subsd  %xmm2,%xmm0
+ 212:	f2 48 0f 2c c8       	cvttsd2si %xmm0,%rcx
+ 217:	48 31 f9             	xor    %rdi,%rcx
+ 21a:	eb b9                	jmp    1d5 <worker_handler+0x1d5>
+ 21c:	0f 1f 40 00          	nopl   0x0(%rax)
+ 220:	48 89 d1             	mov    %rdx,%rcx
+ 223:	83 e2 01             	and    $0x1,%edx
+ 226:	48 d1 e9             	shr    %rcx
+ 229:	48 09 d1             	or     %rdx,%rcx
+ 22c:	f2 48 0f 2a c1       	cvtsi2sd %rcx,%xmm0
+ 231:	f2 0f 58 c0          	addsd  %xmm0,%xmm0
+ 235:	eb d1                	jmp    208 <worker_handler+0x208>
+ 237:	66 0f 1f 84 00 00 00 	nopw   0x0(%rax,%rax,1)
+ 23e:	00 00 
+ 240:	48 85 c0             	test   %rax,%rax
+ 243:	0f 88 af 01 00 00    	js     3f8 <worker_handler+0x3f8>
+ 249:	f2 48 0f 2a d8       	cvtsi2sd %rax,%xmm3
+ 24e:	f2 0f 10 05 00 00 00 	movsd  0x0(%rip),%xmm0        # 256 <worker_handler+0x256>
+ 255:	00 
+ 256:	48 ba db 34 b6 d7 82 	movabs $0x431bde82d7b634db,%rdx
+ 25d:	de 1b 43 
+ 260:	48 f7 e2             	mul    %rdx
+ 263:	f2 0f 5e d8          	divsd  %xmm0,%xmm3
+ 267:	48 c1 ea 12          	shr    $0x12,%rdx
+ 26b:	f0 48 01 15 00 00 00 	lock add %rdx,0x0(%rip)        # 273 <worker_handler+0x273>
+ 272:	00 
+ 273:	31 c9                	xor    %ecx,%ecx
+ 275:	66 0f 57 d2          	xorpd  %xmm2,%xmm2
+ 279:	eb 23                	jmp    29e <worker_handler+0x29e>
+ 27b:	0f 1f 44 00 00       	nopl   0x0(%rax,%rax,1)
+ 280:	f2 48 0f 2a ce       	cvtsi2sd %rsi,%xmm1
+ 285:	f2 0f 5c cb          	subsd  %xmm3,%xmm1
+ 289:	48 83 c1 08          	add    $0x8,%rcx
+ 28d:	48 81 f9 00 12 7a 00 	cmp    $0x7a1200,%rcx
+ 294:	f2 0f 59 c9          	mulsd  %xmm1,%xmm1
+ 298:	f2 0f 58 d1          	addsd  %xmm1,%xmm2
+ 29c:	74 22                	je     2c0 <worker_handler+0x2c0>
+ 29e:	49 8b 74 0d 00       	mov    0x0(%r13,%rcx,1),%rsi
+ 2a3:	48 85 f6             	test   %rsi,%rsi
+ 2a6:	79 d8                	jns    280 <worker_handler+0x280>
+ 2a8:	48 89 f0             	mov    %rsi,%rax
+ 2ab:	83 e6 01             	and    $0x1,%esi
+ 2ae:	48 d1 e8             	shr    %rax
+ 2b1:	48 09 f0             	or     %rsi,%rax
+ 2b4:	f2 48 0f 2a c8       	cvtsi2sd %rax,%xmm1
+ 2b9:	f2 0f 58 c9          	addsd  %xmm1,%xmm1
+ 2bd:	eb c6                	jmp    285 <worker_handler+0x285>
+ 2bf:	90                   	nop
+ 2c0:	f2 0f 5e d0          	divsd  %xmm0,%xmm2
+ 2c4:	f2 0f 51 ca          	sqrtsd %xmm2,%xmm1
+ 2c8:	66 0f 2e c9          	ucomisd %xmm1,%xmm1
+ 2cc:	66 0f 28 c2          	movapd %xmm2,%xmm0
+ 2d0:	0f 8a 59 01 00 00    	jp     42f <worker_handler+0x42f>
+ 2d6:	8b 05 00 00 00 00    	mov    0x0(%rip),%eax        # 2dc <worker_handler+0x2dc>
+ 2dc:	85 c0                	test   %eax,%eax
+ 2de:	0f 85 a5 00 00 00    	jne    389 <worker_handler+0x389>
+ 2e4:	66 0f 57 c0          	xorpd  %xmm0,%xmm0
+ 2e8:	be 00 00 00 00       	mov    $0x0,%esi
+ 2ed:	bf 01 00 00 00       	mov    $0x1,%edi
+ 2f2:	b8 01 00 00 00       	mov    $0x1,%eax
+ 2f7:	f2 0f 11 4c 24 08    	movsd  %xmm1,0x8(%rsp)
+ 2fd:	f2 0f 11 1c 24       	movsd  %xmm3,(%rsp)
+ 302:	e8 00 00 00 00       	callq  307 <worker_handler+0x307>
+ 307:	ba 40 42 0f 00       	mov    $0xf4240,%edx
+ 30c:	be 00 00 00 00       	mov    $0x0,%esi
+ 311:	bf 01 00 00 00       	mov    $0x1,%edi
+ 316:	31 c0                	xor    %eax,%eax
+ 318:	e8 00 00 00 00       	callq  31d <worker_handler+0x31d>
+ 31d:	4c 89 f2             	mov    %r14,%rdx
+ 320:	be 00 00 00 00       	mov    $0x0,%esi
+ 325:	bf 01 00 00 00       	mov    $0x1,%edi
+ 32a:	31 c0                	xor    %eax,%eax
+ 32c:	e8 00 00 00 00       	callq  331 <worker_handler+0x331>
+ 331:	f2 0f 10 1c 24       	movsd  (%rsp),%xmm3
+ 336:	8b 0d 00 00 00 00    	mov    0x0(%rip),%ecx        # 33c <worker_handler+0x33c>
+ 33c:	44 89 e2             	mov    %r12d,%edx
+ 33f:	be 00 00 00 00       	mov    $0x0,%esi
+ 344:	bf 01 00 00 00       	mov    $0x1,%edi
+ 349:	66 0f 28 c3          	movapd %xmm3,%xmm0
+ 34d:	b8 01 00 00 00       	mov    $0x1,%eax
+ 352:	e8 00 00 00 00       	callq  357 <worker_handler+0x357>
+ 357:	be 00 00 00 00       	mov    $0x0,%esi
+ 35c:	bf 01 00 00 00       	mov    $0x1,%edi
+ 361:	48 89 ea             	mov    %rbp,%rdx
+ 364:	31 c0                	xor    %eax,%eax
+ 366:	e8 00 00 00 00       	callq  36b <worker_handler+0x36b>
+ 36b:	f2 0f 10 4c 24 08    	movsd  0x8(%rsp),%xmm1
+ 371:	be 00 00 00 00       	mov    $0x0,%esi
+ 376:	bf 01 00 00 00       	mov    $0x1,%edi
+ 37b:	b8 01 00 00 00       	mov    $0x1,%eax
+ 380:	66 0f 28 c1          	movapd %xmm1,%xmm0
+ 384:	e8 00 00 00 00       	callq  389 <worker_handler+0x389>
+ 389:	48 89 df             	mov    %rbx,%rdi
+ 38c:	e8 00 00 00 00       	callq  391 <worker_handler+0x391>
+ 391:	4c 89 ef             	mov    %r13,%rdi
+ 394:	e8 00 00 00 00       	callq  399 <worker_handler+0x399>
+ 399:	48 8b 7c 24 68       	mov    0x68(%rsp),%rdi
+ 39e:	64 48 33 3c 25 28 00 	xor    %fs:0x28,%rdi
+ 3a5:	00 00 
+ 3a7:	0f 85 9a 00 00 00    	jne    447 <worker_handler+0x447>
+ 3ad:	48 83 c4 78          	add    $0x78,%rsp
+ 3b1:	5b                   	pop    %rbx
+ 3b2:	5d                   	pop    %rbp
+ 3b3:	41 5c                	pop    %r12
+ 3b5:	41 5d                	pop    %r13
+ 3b7:	41 5e                	pop    %r14
+ 3b9:	41 5f                	pop    %r15
+ 3bb:	c3                   	retq   
+ 3bc:	f2 0f 5c c1          	subsd  %xmm1,%xmm0
+ 3c0:	48 b8 00 00 00 00 00 	movabs $0x8000000000000000,%rax
+ 3c7:	00 00 80 
+ 3ca:	f2 48 0f 2c e8       	cvttsd2si %xmm0,%rbp
+ 3cf:	48 31 c5             	xor    %rax,%rbp
+ 3d2:	e9 e2 fd ff ff       	jmpq   1b9 <worker_handler+0x1b9>
+ 3d7:	f2 0f 10 05 00 00 00 	movsd  0x0(%rip),%xmm0        # 3df <worker_handler+0x3df>
+ 3de:	00 
+ 3df:	be 00 00 00 00       	mov    $0x0,%esi
+ 3e4:	bf 01 00 00 00       	mov    $0x1,%edi
+ 3e9:	b8 01 00 00 00       	mov    $0x1,%eax
+ 3ee:	e8 00 00 00 00       	callq  3f3 <worker_handler+0x3f3>
+ 3f3:	e9 37 fc ff ff       	jmpq   2f <worker_handler+0x2f>
+ 3f8:	48 89 c2             	mov    %rax,%rdx
+ 3fb:	48 89 c1             	mov    %rax,%rcx
+ 3fe:	48 d1 ea             	shr    %rdx
+ 401:	83 e1 01             	and    $0x1,%ecx
+ 404:	48 09 ca             	or     %rcx,%rdx
+ 407:	f2 48 0f 2a da       	cvtsi2sd %rdx,%xmm3
+ 40c:	f2 0f 58 db          	addsd  %xmm3,%xmm3
+ 410:	e9 39 fe ff ff       	jmpq   24e <worker_handler+0x24e>
+ 415:	48 89 c2             	mov    %rax,%rdx
+ 418:	83 e0 01             	and    $0x1,%eax
+ 41b:	48 d1 ea             	shr    %rdx
+ 41e:	48 09 c2             	or     %rax,%rdx
+ 421:	f2 48 0f 2a c2       	cvtsi2sd %rdx,%xmm0
+ 426:	f2 0f 58 c0          	addsd  %xmm0,%xmm0
+ 42a:	e9 73 fd ff ff       	jmpq   1a2 <worker_handler+0x1a2>
+ 42f:	f2 0f 11 1c 24       	movsd  %xmm3,(%rsp)
+ 434:	e8 00 00 00 00       	callq  439 <worker_handler+0x439>
+ 439:	f2 0f 10 1c 24       	movsd  (%rsp),%xmm3
+ 43e:	66 0f 28 c8          	movapd %xmm0,%xmm1
+ 442:	e9 8f fe ff ff       	jmpq   2d6 <worker_handler+0x2d6>
+ 447:	e8 00 00 00 00       	callq  44c <.LC4+0x43c>
+
+Disassembly of section .text.startup:
+
+0000000000000000 <main>:
+   0:	41 57                	push   %r15
+   2:	be 00 00 00 00       	mov    $0x0,%esi
+   7:	bf 01 00 00 00       	mov    $0x1,%edi
+   c:	31 c0                	xor    %eax,%eax
+   e:	41 56                	push   %r14
+  10:	41 55                	push   %r13
+  12:	41 bd 01 00 00 00    	mov    $0x1,%r13d
+  18:	41 54                	push   %r12
+  1a:	55                   	push   %rbp
+  1b:	53                   	push   %rbx
+  1c:	48 83 ec 48          	sub    $0x48,%rsp
+  20:	e8 00 00 00 00       	callq  25 <main+0x25>
+  25:	48 c7 44 24 10 00 00 	movq   $0x0,0x10(%rsp)
+  2c:	00 00 
+  2e:	48 c7 44 24 18 00 00 	movq   $0x0,0x18(%rsp)
+  35:	00 00 
+  37:	48 c7 44 24 20 00 00 	movq   $0x0,0x20(%rsp)
+  3e:	00 00 
+  40:	48 c7 44 24 28 00 00 	movq   $0x0,0x28(%rsp)
+  47:	00 00 
+  49:	48 c7 44 24 30 00 00 	movq   $0x0,0x30(%rsp)
+  50:	00 00 
+  52:	48 c7 44 24 38 00 00 	movq   $0x0,0x38(%rsp)
+  59:	00 00 
+  5b:	c7 44 24 0c 03 00 00 	movl   $0x3,0xc(%rsp)
+  62:	00 
+  63:	44 89 2d 00 00 00 00 	mov    %r13d,0x0(%rip)        # 6a <main+0x6a>
+  6a:	45 89 ef             	mov    %r13d,%r15d
+  6d:	31 db                	xor    %ebx,%ebx
+  6f:	41 bc 00 00 00 00    	mov    $0x0,%r12d
+  75:	0f 1f 00             	nopl   (%rax)
+  78:	4d 63 f7             	movslq %r15d,%r14
+  7b:	48 c7 05 00 00 00 00 	movq   $0x0,0x0(%rip)        # 86 <main+0x86>
+  82:	00 00 00 00 
+  86:	4a 8d 3c f5 00 00 00 	lea    0x0(,%r14,8),%rdi
+  8d:	00 
+  8e:	e8 00 00 00 00       	callq  93 <main+0x93>
+  93:	45 85 ff             	test   %r15d,%r15d
+  96:	48 89 c5             	mov    %rax,%rbp
+  99:	0f 8e d9 00 00 00    	jle    178 <main+0x178>
+  9f:	49 89 c6             	mov    %rax,%r14
+  a2:	45 31 ff             	xor    %r15d,%r15d
+  a5:	0f 1f 00             	nopl   (%rax)
+  a8:	31 f6                	xor    %esi,%esi
+  aa:	4c 89 f7             	mov    %r14,%rdi
+  ad:	48 89 d9             	mov    %rbx,%rcx
+  b0:	ba 00 00 00 00       	mov    $0x0,%edx
+  b5:	41 83 c7 01          	add    $0x1,%r15d
+  b9:	49 83 c6 08          	add    $0x8,%r14
+  bd:	e8 00 00 00 00       	callq  c2 <main+0xc2>
+  c2:	44 8b 0d 00 00 00 00 	mov    0x0(%rip),%r9d        # c9 <main+0xc9>
+  c9:	45 39 f9             	cmp    %r15d,%r9d
+  cc:	7f da                	jg     a8 <main+0xa8>
+  ce:	45 85 c9             	test   %r9d,%r9d
+  d1:	7e 2c                	jle    ff <main+0xff>
+  d3:	45 31 ff             	xor    %r15d,%r15d
+  d6:	66 2e 0f 1f 84 00 00 	nopw   %cs:0x0(%rax,%rax,1)
+  dd:	00 00 00 
+  e0:	48 8b 7d 00          	mov    0x0(%rbp),%rdi
+  e4:	31 f6                	xor    %esi,%esi
+  e6:	41 83 c7 01          	add    $0x1,%r15d
+  ea:	48 83 c5 08          	add    $0x8,%rbp
+  ee:	e8 00 00 00 00       	callq  f3 <main+0xf3>
+  f3:	44 8b 0d 00 00 00 00 	mov    0x0(%rip),%r9d        # fa <main+0xfa>
+  fa:	45 39 f9             	cmp    %r15d,%r9d
+  fd:	7f e1                	jg     e0 <main+0xe0>
+  ff:	48 8b 05 00 00 00 00 	mov    0x0(%rip),%rax        # 106 <main+0x106>
+ 106:	49 63 c9             	movslq %r9d,%rcx
+ 109:	31 d2                	xor    %edx,%edx
+ 10b:	be 00 00 00 00       	mov    $0x0,%esi
+ 110:	bf 01 00 00 00       	mov    $0x1,%edi
+ 115:	48 f7 f1             	div    %rcx
+ 118:	48 83 c3 01          	add    $0x1,%rbx
+ 11c:	b9 40 42 0f 00       	mov    $0xf4240,%ecx
+ 121:	4c 89 e2             	mov    %r12,%rdx
+ 124:	49 89 c0             	mov    %rax,%r8
+ 127:	31 c0                	xor    %eax,%eax
+ 129:	e8 00 00 00 00       	callq  12e <main+0x12e>
+ 12e:	48 83 fb 06          	cmp    $0x6,%rbx
+ 132:	74 14                	je     148 <main+0x148>
+ 134:	44 8b 3d 00 00 00 00 	mov    0x0(%rip),%r15d        # 13b <main+0x13b>
+ 13b:	4c 8b 64 dc 10       	mov    0x10(%rsp,%rbx,8),%r12
+ 140:	e9 33 ff ff ff       	jmpq   78 <main+0x78>
+ 145:	0f 1f 00             	nopl   (%rax)
+ 148:	45 01 ed             	add    %r13d,%r13d
+ 14b:	83 6c 24 0c 01       	subl   $0x1,0xc(%rsp)
+ 150:	0f 85 0d ff ff ff    	jne    63 <main+0x63>
+ 156:	be 00 00 00 00       	mov    $0x0,%esi
+ 15b:	bf 01 00 00 00       	mov    $0x1,%edi
+ 160:	31 c0                	xor    %eax,%eax
+ 162:	e8 00 00 00 00       	callq  167 <main+0x167>
+ 167:	48 83 c4 48          	add    $0x48,%rsp
+ 16b:	31 c0                	xor    %eax,%eax
+ 16d:	5b                   	pop    %rbx
+ 16e:	5d                   	pop    %rbp
+ 16f:	41 5c                	pop    %r12
+ 171:	41 5d                	pop    %r13
+ 173:	41 5e                	pop    %r14
+ 175:	41 5f                	pop    %r15
+ 177:	c3                   	retq   
+ 178:	4c 89 f1             	mov    %r14,%rcx
+ 17b:	45 89 f9             	mov    %r15d,%r9d
+ 17e:	31 c0                	xor    %eax,%eax
+ 180:	eb 87                	jmp    109 <main+0x109>
